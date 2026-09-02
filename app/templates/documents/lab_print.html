@@ -1,0 +1,33 @@
+{% import "documents/_macros.html" as m with context %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demande de laboratoire — {{ patient.prenom }} {{ patient.nom }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/print.css') }}">
+<style>@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500;600&display=swap');</style>
+</head>
+<body>
+<div class="doc-page-wrap">
+    <div class="doc-toolbar no-print">
+        <a href="{{ url_for('patients.view_patient', patient_id=patient.patient_id or patient.id) }}" class="btn btn-secondary btn-sm">← Retour au dossier</a>
+        <button class="btn btn-primary btn-sm" onclick="window.print()">🖨️ Imprimer</button>
+    </div>
+    <div class="doc-sheet paper-{{ taille|lower }}">
+        {{ m.doc_header(clinic, "DEMANDE D'ANALYSES DE LABORATOIRE", style) }}
+        {{ m.doc_patient(patient, age) }}
+        <div class="doc-body">
+            <strong>Examens / analyses demandés :</strong>
+            <ul style="margin-top:10px;">
+                {% for ligne in demande.analyses.split('\n') if ligne.strip() %}
+                <li style="margin-bottom:6px;">{{ ligne.strip() }}</li>
+                {% endfor %}
+            </ul>
+            {% if demande.notes %}<div style="margin-top:16px;"><strong>Notes cliniques :</strong> {{ demande.notes }}</div>{% endif %}
+        </div>
+        {{ m.doc_footer(clinic, 'REQ-' ~ demande.id) }}
+    </div>
+</div>
+<script>window.addEventListener('load', () => setTimeout(() => window.print(), 350));</script>
+</body>
+</html>

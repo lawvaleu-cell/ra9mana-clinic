@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Modifier' if mode == 'edit' else 'Nouveau' }} patient{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">{{ 'Modifier le patient' if mode == 'edit' else 'Nouveau patient' }}</div>
+        <div class="page-subtitle">Renseignez les informations du patient</div>
+    </div>
+</div>
+
+<form method="POST" class="card" style="max-width:820px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <h3 style="margin-top:0;">Informations personnelles</h3>
+    <div class="form-row">
+        <div class="form-group">
+            <label class="form-label">Prénom <span class="required">*</span></label>
+            <input class="form-control" name="prenom" value="{{ patient.prenom or '' }}" required>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Nom <span class="required">*</span></label>
+            <input class="form-control" name="nom" value="{{ patient.nom or '' }}" required>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label class="form-label">Sexe</label>
+            <select class="form-control" name="sexe">
+                <option value="">—</option>
+                <option value="M" {{ 'selected' if patient.sexe == 'M' }}>Masculin</option>
+                <option value="F" {{ 'selected' if patient.sexe == 'F' }}>Féminin</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Date de naissance</label>
+            <input class="form-control" type="date" name="date_naissance" value="{{ patient.date_naissance or '' }}">
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label class="form-label">Groupe sanguin</label>
+            <select class="form-control" name="groupe_sanguin">
+                <option value="">—</option>
+                {% for g in ['A+','A-','B+','B-','AB+','AB-','O+','O-'] %}
+                <option value="{{ g }}" {{ 'selected' if patient.groupe_sanguin == g }}>{{ g }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Assurance</label>
+            <input class="form-control" name="assurance" value="{{ patient.assurance or '' }}">
+        </div>
+    </div>
+
+    <h3>Coordonnées</h3>
+    <div class="form-row">
+        <div class="form-group">
+            <label class="form-label">Téléphone</label>
+            <input class="form-control" name="telephone" value="{{ patient.telephone or '' }}">
+        </div>
+        <div class="form-group">
+            <label class="form-label">E-mail</label>
+            <input class="form-control" type="email" name="email" value="{{ patient.email or '' }}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Adresse</label>
+        <input class="form-control" name="adresse" value="{{ patient.adresse or '' }}">
+    </div>
+    <div class="form-group">
+        <label class="form-label">Contact d'urgence</label>
+        <input class="form-control" name="contact_urgence" value="{{ patient.contact_urgence or '' }}" placeholder="Nom et téléphone">
+    </div>
+
+    <h3>Informations médicales</h3>
+    <div class="form-group">
+        <label class="form-label">Allergies</label>
+        <textarea class="form-control" name="allergies" rows="2">{{ patient.allergies or '' }}</textarea>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Maladies chroniques</label>
+        <textarea class="form-control" name="maladies_chroniques" rows="2">{{ patient.maladies_chroniques or '' }}</textarea>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Notes médicales</label>
+        <textarea class="form-control" name="notes_medicales" rows="3">{{ patient.notes_medicales or '' }}</textarea>
+    </div>
+
+    <div class="flex gap-2" style="margin-top:10px;">
+        <button type="submit" class="btn btn-primary">Enregistrer le patient</button>
+        <a href="{{ url_for('patients.list_patients') }}" class="btn btn-secondary">Annuler</a>
+    </div>
+</form>
+{% endblock %}

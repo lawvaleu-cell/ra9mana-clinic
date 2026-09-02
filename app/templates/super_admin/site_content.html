@@ -1,0 +1,107 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Contenu du site{% endblock %}
+{% block content %}
+<div class="page-header"><div class="page-title">Contenu du site public</div></div>
+
+<form method="POST" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+<div style="display:flex;flex-direction:column;gap:18px;">
+    <div class="card">
+        <div class="card-title" style="margin-bottom:6px;">Identité visuelle</div>
+        <p class="text-muted" style="font-size:12px;margin-bottom:14px;">
+            Le logo est utilisé comme favicon et dans l'en-tête de la landing page. Les arrière-plans s'affichent derrière le formulaire de connexion/inscription et sur la page d'accueil, avec un léger voile bleu appliqué automatiquement.
+        </p>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Logo de la plateforme</label>
+                {% if content.logo_plateforme %}<div class="text-muted" style="font-size:11px;margin-bottom:4px;">✓ Logo actuel défini</div>{% endif %}
+                <input class="form-control" type="file" name="logo_plateforme" accept="image/*,.svg">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Arrière-plan — page d'accueil</label>
+                {% if content.fond_landing %}<div class="text-muted" style="font-size:11px;margin-bottom:4px;">✓ Image actuelle définie</div>{% endif %}
+                <input class="form-control" type="file" name="fond_landing" accept="image/*">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Arrière-plan — connexion</label>
+                {% if content.fond_connexion %}<div class="text-muted" style="font-size:11px;margin-bottom:4px;">✓ Image actuelle définie</div>{% endif %}
+                <input class="form-control" type="file" name="fond_connexion" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Arrière-plan — inscription</label>
+                {% if content.fond_inscription %}<div class="text-muted" style="font-size:11px;margin-bottom:4px;">✓ Image actuelle définie</div>{% endif %}
+                <input class="form-control" type="file" name="fond_inscription" accept="image/*">
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Section Héro</div>
+        <div class="form-group"><label class="form-label">Titre principal</label><input class="form-control" name="hero_titre" value="{{ content.hero_titre or '' }}"></div>
+        <div class="form-group"><label class="form-label">Sous-titre</label><textarea class="form-control" name="hero_sous_titre" rows="2">{{ content.hero_sous_titre or '' }}</textarea></div>
+    </div>
+
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Section « Pourquoi nous choisir »</div>
+        <div class="form-group"><label class="form-label">Titre</label><input class="form-control" name="pourquoi_titre" value="{{ content.pourquoi_titre or '' }}"></div>
+        <div class="form-group"><label class="form-label">Texte</label><textarea class="form-control" name="pourquoi_texte" rows="2">{{ content.pourquoi_texte or '' }}</textarea></div>
+    </div>
+
+    <div class="card">
+        <div class="card-title" style="margin-bottom:6px;">Fonctionnalités</div>
+        <p class="text-muted" style="font-size:12px;margin-bottom:10px;">Une par ligne, format : <code>Titre|Description|Emoji</code></p>
+        <textarea class="form-control" name="fonctionnalites" rows="7" style="font-family:monospace;font-size:12px;">{{ content.fonctionnalites or '' }}</textarea>
+    </div>
+
+    <div class="card">
+        <div class="card-title" style="margin-bottom:6px;">Questions fréquentes (FAQ)</div>
+        <p class="text-muted" style="font-size:12px;margin-bottom:10px;">Une par ligne, format : <code>Question|Réponse</code></p>
+        <textarea class="form-control" name="faq" rows="6" style="font-family:monospace;font-size:12px;">{{ content.faq or '' }}</textarea>
+    </div>
+
+    <div class="card">
+        <div class="card-title" style="margin-bottom:6px;">Témoignages</div>
+        <p class="text-muted" style="font-size:12px;margin-bottom:10px;">Un par ligne, format : <code>Nom|Rôle|Témoignage</code></p>
+        <textarea class="form-control" name="temoignages" rows="5" style="font-family:monospace;font-size:12px;">{{ content.temoignages or '' }}</textarea>
+    </div>
+
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Tarifs affichés</div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Prix mensuel</label><input class="form-control" name="tarif_mensuel_prix" value="{{ content.tarif_mensuel_prix or '' }}"></div>
+            <div class="form-group"><label class="form-label">Prix annuel</label><input class="form-control" name="tarif_annuel_prix" value="{{ content.tarif_annuel_prix or '' }}"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Coordonnées de contact</div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Téléphone</label><input class="form-control" name="contact_telephone" value="{{ content.contact_telephone or '' }}"></div>
+            <div class="form-group"><label class="form-label">E-mail</label><input class="form-control" name="contact_email" value="{{ content.contact_email or '' }}"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Adresse</label><input class="form-control" name="contact_adresse" value="{{ content.contact_adresse or '' }}"></div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Facebook</label><input class="form-control" name="contact_facebook" value="{{ content.contact_facebook or '' }}"></div>
+            <div class="form-group"><label class="form-label">Instagram</label><input class="form-control" name="contact_instagram" value="{{ content.contact_instagram or '' }}"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">LinkedIn</label><input class="form-control" name="contact_linkedin" value="{{ content.contact_linkedin or '' }}"></div>
+            <div class="form-group"><label class="form-label">WhatsApp (lien)</label><input class="form-control" name="contact_whatsapp" value="{{ content.contact_whatsapp or '' }}"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Pied de page & pages légales</div>
+        <div class="form-group"><label class="form-label">Texte du pied de page</label><textarea class="form-control" name="footer_texte" rows="2">{{ content.footer_texte or '' }}</textarea></div>
+        <div class="form-group"><label class="form-label">À propos</label><textarea class="form-control" name="a_propos" rows="3">{{ content.a_propos or '' }}</textarea></div>
+        <div class="form-group"><label class="form-label">Conditions d'utilisation</label><textarea class="form-control" name="conditions_utilisation" rows="8">{{ content.conditions_utilisation or '' }}</textarea></div>
+        <div class="form-group"><label class="form-label">Politique de confidentialité</label><textarea class="form-control" name="politique_confidentialite" rows="8">{{ content.politique_confidentialite or '' }}</textarea></div>
+        <div class="form-group"><label class="form-label">Support juridique (coordonnées / mention)</label><textarea class="form-control" name="support_juridique" rows="3">{{ content.support_juridique or '' }}</textarea></div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Enregistrer le contenu du site</button>
+</div>
+</form>
+{% endblock %}

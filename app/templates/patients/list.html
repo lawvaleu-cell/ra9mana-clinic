@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Patients{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Patients</div>
+        <div class="page-subtitle">{{ total }} patient(s) enregistré(s)</div>
+    </div>
+    <a href="{{ url_for('patients.create_patient') }}" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Nouveau patient
+    </a>
+</div>
+
+<div class="card" style="margin-bottom:18px;">
+    <form method="GET" class="flex gap-2">
+        <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Rechercher par nom, téléphone, N° patient, maladie…">
+        <button class="btn btn-secondary" type="submit">Rechercher</button>
+        {% if q %}<a href="{{ url_for('patients.list_patients') }}" class="btn btn-ghost">Réinitialiser</a>{% endif %}
+    </form>
+</div>
+
+<div class="card">
+    {% if patients %}
+    <div class="table-wrap">
+    <table class="data-table">
+        <thead><tr>
+            <th>Patient</th><th>N° Patient</th><th>Téléphone</th><th>Âge</th><th>Groupe sanguin</th><th>Inscrit le</th><th></th>
+        </tr></thead>
+        <tbody>
+        {% for p in patients %}
+            <tr onclick="window.location='{{ url_for('patients.view_patient', patient_id=p.id) }}'" style="cursor:pointer;">
+                <td>
+                    <div class="flex items-center gap-3">
+                        <span class="avatar" style="width:32px;height:32px;font-size:12px;">{{ p.prenom[0]|upper }}{{ p.nom[0]|upper }}</span>
+                        <div>
+                            <div style="font-weight:600;">{{ p.prenom }} {{ p.nom }}</div>
+                            {% if p.allergies %}<div class="text-danger" style="font-size:11px;">⚠ Allergies</div>{% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td class="text-muted">{{ p.numero_patient }}</td>
+                <td>{{ p.telephone or '—' }}</td>
+                <td>{{ (p.date_naissance|age) if p.date_naissance else '—' }}</td>
+                <td>{% if p.groupe_sanguin %}<span class="badge badge-neutral">{{ p.groupe_sanguin }}</span>{% else %}—{% endif %}</td>
+                <td class="text-muted">{{ p.date_inscription|date_fr }}</td>
+                <td class="flex gap-2">
+                    <a href="{{ url_for('patients.view_patient', patient_id=p.id) }}" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();">Voir →</a>
+                    <a href="{{ url_for('files.list_files', patient_id=p.id) }}" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();">📎 Fichiers</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% for i in range(1, total_pages + 1) %}
+            <a href="{{ url_for('patients.list_patients', q=q, page=i) }}" class="{{ 'current' if i == page }}">{{ i }}</a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <h3>Aucun patient trouvé</h3>
+        <p>{% if q %}Aucun résultat pour « {{ q }} ».{% else %}Commencez par enregistrer votre premier patient.{% endif %}</p>
+        <a href="{{ url_for('patients.create_patient') }}" class="btn btn-primary" style="margin-top:10px;">Nouveau patient</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

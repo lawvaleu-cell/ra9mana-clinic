@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Historique — {{ patient.prenom }} {{ patient.nom }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Historique des consultations</div>
+        <div class="page-subtitle">{{ patient.prenom }} {{ patient.nom }} — {{ consultations|length }} consultation(s)</div>
+    </div>
+    <div class="flex gap-2">
+        <a href="{{ url_for('patients.view_patient', patient_id=patient.id) }}" class="btn btn-secondary btn-sm">← Dossier patient</a>
+        <a href="{{ url_for('patients.evolution_report', patient_id=patient.id) }}" class="btn btn-primary btn-sm">📈 Voir les rapports d'évolution</a>
+    </div>
+</div>
+
+{% if consultations %}
+<div style="display:flex;flex-direction:column;gap:14px;">
+    {% for c in consultations %}
+    <div class="card">
+        <div class="flex justify-between items-center" style="margin-bottom:12px;">
+            <div>
+                <strong style="font-size:14px;">{{ c.date_consultation|datetime_fr }}</strong>
+                <span class="text-muted" style="font-size:12px;"> — {{ c.medecin_nom or 'Médecin' }}</span>
+            </div>
+            {% if c.motif %}<span class="badge badge-primary">{{ c.motif }}</span>{% endif %}
+        </div>
+
+        <div class="grid grid-4" style="margin-bottom:12px;">
+            {% if c.poids %}<div class="stat-card" style="padding:12px;"><div class="stat-label">Poids</div><div style="font-weight:700;font-size:16px;">{{ c.poids }} kg</div></div>{% endif %}
+            {% if c.taille %}<div class="stat-card" style="padding:12px;"><div class="stat-label">Taille</div><div style="font-weight:700;font-size:16px;">{{ c.taille }} cm</div></div>{% endif %}
+            {% if c.tension %}<div class="stat-card" style="padding:12px;"><div class="stat-label">Tension</div><div style="font-weight:700;font-size:16px;">{{ c.tension }}</div></div>{% endif %}
+            {% if c.temperature %}<div class="stat-card" style="padding:12px;"><div class="stat-label">Température</div><div style="font-weight:700;font-size:16px;">{{ c.temperature }} °C</div></div>{% endif %}
+            {% if c.frequence_cardiaque %}<div class="stat-card" style="padding:12px;"><div class="stat-label">Fréq. cardiaque</div><div style="font-weight:700;font-size:16px;">{{ c.frequence_cardiaque }} bpm</div></div>{% endif %}
+            {% if c.saturation_oxygene %}<div class="stat-card" style="padding:12px;"><div class="stat-label">Saturation O₂</div><div style="font-weight:700;font-size:16px;">{{ c.saturation_oxygene }} %</div></div>{% endif %}
+            {% if c.glycemie %}<div class="stat-card" style="padding:12px;"><div class="stat-label">Glycémie</div><div style="font-weight:700;font-size:16px;">{{ c.glycemie }} g/l</div></div>{% endif %}
+            {% if c.poids and c.taille %}<div class="stat-card" style="padding:12px;"><div class="stat-label">IMC</div><div style="font-weight:700;font-size:16px;">{{ (c.poids / ((c.taille/100) ** 2))|round(1) }}</div></div>{% endif %}
+        </div>
+
+        {% if c.symptomes %}<div style="font-size:13px;margin-bottom:6px;"><strong>Symptômes :</strong> {{ c.symptomes }}</div>{% endif %}
+        {% if c.diagnostic %}<div style="font-size:13px;margin-bottom:6px;"><strong>Diagnostic :</strong> {{ c.diagnostic }}</div>{% endif %}
+        {% if c.notes %}<div style="font-size:13px;color:var(--text-secondary);">{{ c.notes }}</div>{% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card empty-state"><p>Aucune consultation enregistrée pour ce patient.</p></div>
+{% endif %}
+{% endblock %}

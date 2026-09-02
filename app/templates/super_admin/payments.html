@@ -1,0 +1,73 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Paiements{% endblock %}
+{% block content %}
+<div class="page-header"><div class="page-title">Gestion des paiements d'abonnement</div></div>
+
+<div class="grid grid-4" style="margin-bottom:20px;">
+    <div class="stat-card"><div class="stat-label">Revenu total</div><div class="stat-value" style="font-size:20px;">{{ '%.0f'|format(revenu_total) }}</div></div>
+    <div class="stat-card">
+        <div class="stat-label">Revenu ce mois</div>
+        <div class="stat-value" style="font-size:20px;">{{ '%.0f'|format(revenu_mois) }}</div>
+        <div class="stat-trend {{ 'up' if croissance >= 0 else 'down' }}">{{ '+' if croissance >= 0 }}{{ croissance }}% vs mois dernier</div>
+    </div>
+    <div class="stat-card"><div class="stat-label">Revenu cette année</div><div class="stat-value" style="font-size:20px;">{{ '%.0f'|format(revenu_annee) }}</div></div>
+    <div class="stat-card"><div class="stat-label">Paiements en attente</div><div class="stat-value" style="font-size:20px;color:var(--warning);">{{ paiements_attente }}</div></div>
+</div>
+
+<div class="grid grid-3" style="margin-bottom:20px;">
+    <div class="stat-card"><div class="stat-label">Comptes payés actifs</div><div class="stat-value" style="font-size:20px;color:var(--accent);">{{ comptes_payes }}</div></div>
+    <div class="stat-card"><div class="stat-label">Comptes expirés</div><div class="stat-value" style="font-size:20px;color:var(--danger);">{{ comptes_expires }}</div></div>
+    <div class="stat-card">
+        <div class="stat-label">Revenu par plan</div>
+        {% for p in revenu_par_plan %}
+        <div class="flex justify-between" style="font-size:12.5px;margin-top:4px;"><span>{{ p.plan }}</span><strong>{{ '%.0f'|format(p.s) }}</strong></div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-title" style="margin-bottom:14px;">Évolution du revenu (6 derniers mois)</div>
+    <canvas id="chartRevenu" height="90"></canvas>
+</div>
+
+<div class="card">
+    <div class="card-title" style="margin-bottom:14px;">Abonnements par clinique</div>
+    <div class="table-wrap">
+    <table class="data-table">
+        <thead><tr><th>Clinique</th><th>Plan</th><th>Prix</th><th>Statut paiement</th><th>Prochaine échéance</th><th>Jours restants</th><th></th></tr></thead>
+        <tbody>
+        {% for c in cliniques %}
+            <tr>
+                <td style="font-weight:600;">{{ c.nom_clinique }}</td>
+                <td><span class="badge badge-neutral">{{ c.plan }}</span></td>
+                <td>{{ c.prix_abonnement or plan_prix.get(c.plan, 0) }}</td>
+                <td><span class="badge badge-{{ 'success' if c.statut_paiement == 'paye' else ('warning' if c.statut_paiement == 'en_attente' else 'danger') }}">{{ c.statut_paiement or 'en_attente' }}</span></td>
+                <td class="text-muted">{{ c.date_expiration_abonnement or '—' }}</td>
+                <td>
+                    {% if c.jours_restants is not none %}
+                        <span class="{{ 'text-danger' if c.jours_restants < 0 else ('text-muted' if c.jours_restants > 7 else 'text-danger') }}">{{ c.jours_restants }} j</span>
+                    {% else %}—{% endif %}
+                </td>
+                <td><a href="{{ url_for('super_admin.clinic_payments', clinic_id=c.id) }}" class="btn btn-ghost btn-sm">Gérer →</a></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const styles = getComputedStyle(document.documentElement);
+new Chart(document.getElementById('chartRevenu'), {
+    type: 'line',
+    data: {
+        labels: {{ historique_mois|map(attribute='mois')|list|tojson }},
+        datasets: [{ label: 'Revenu', data: {{ historique_mois|map(attribute='montant')|list|tojson }},
+            borderColor: styles.getPropertyValue('--primary').trim(), backgroundColor: styles.getPropertyValue('--primary-light').trim(),
+            fill: true, tension: .35, pointRadius: 4 }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+});
+</script>
+{% endblock %}

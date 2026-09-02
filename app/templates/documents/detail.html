@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ document.titre }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">{{ document.titre }}</div>
+        <div class="page-subtitle">{{ document.type_label }} — {{ patient.prenom }} {{ patient.nom }} — {{ document.date_str }}</div>
+    </div>
+    <div class="flex gap-2">
+        <button class="btn btn-primary" onclick="openPaperSizeModal('{{ url_for('documents.print_document', document_id=document.id) }}', '{{ url_for('documents.download_document_pdf', document_id=document.id) }}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+            Imprimer
+        </button>
+    </div>
+</div>
+
+<div class="card" style="max-width:800px;">
+    <div style="font-size:13.7px;line-height:1.7;">{{ document.contenu|safe }}</div>
+</div>
+
+<form method="POST" action="{{ url_for('documents.delete_document', document_id=document.id) }}" style="max-width:800px;margin-top:14px;" onsubmit="return confirm('Supprimer ce document ?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-danger btn-sm">Supprimer le document</button>
+</form>
+{% endblock %}

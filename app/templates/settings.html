@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Paramètres{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Paramètres de la clinique</div>
+        <div class="page-subtitle">Personnalisez votre espace RA9MANA Clinic</div>
+    </div>
+</div>
+
+<form method="POST" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+<div class="grid" style="grid-template-columns: 2fr 1fr; align-items:start; gap:20px;">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+        <div class="card">
+            <div class="card-title" style="margin-bottom:16px;">Informations de la clinique</div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Nom de la clinique</label><input class="form-control" name="nom_clinique" value="{{ clinic.nom_clinique or '' }}"></div>
+                <div class="form-group"><label class="form-label">Nom du médecin</label><input class="form-control" name="nom_medecin" value="{{ clinic.nom_medecin or '' }}"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Spécialité</label><input class="form-control" name="specialite" value="{{ clinic.specialite or '' }}"></div>
+                <div class="form-group"><label class="form-label">Numéro fiscal</label><input class="form-control" name="numero_fiscal" value="{{ clinic.numero_fiscal or '' }}"></div>
+            </div>
+            <div class="form-group"><label class="form-label">Adresse</label><input class="form-control" name="adresse" value="{{ clinic.adresse or '' }}"></div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Téléphone</label><input class="form-control" name="telephone" value="{{ clinic.telephone or '' }}"></div>
+                <div class="form-group"><label class="form-label">E-mail</label><input class="form-control" name="email" value="{{ clinic.email or '' }}"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Site web</label><input class="form-control" name="site_web" value="{{ clinic.site_web or '' }}"></div>
+                <div class="form-group"><label class="form-label">Heures de travail</label><input class="form-control" name="heures_travail" value="{{ clinic.heures_travail or '' }}" placeholder="Lun-Ven 8h-17h"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" style="margin-bottom:6px;">Informations multilingues (documents imprimés)</div>
+            <p class="text-muted" style="font-size:12px;margin-bottom:16px;">
+                Ces traductions s'affichent à côté du français sur les documents imprimables (ordonnances, factures, rapports…).
+            </p>
+            <div class="tabs" id="lang-tabs">
+                <div class="tab-link active" onclick="switchLangTab('ar')" id="tab-ar">العربية</div>
+                <div class="tab-link" onclick="switchLangTab('en')" id="tab-en">English</div>
+            </div>
+            <div id="lang-panel-ar">
+                <div class="form-group"><label class="form-label">Nom de la clinique (AR)</label><input class="form-control" name="nom_clinique_ar" dir="rtl" value="{{ clinic.nom_clinique_ar or '' }}"></div>
+                <div class="form-group"><label class="form-label">Nom du médecin (AR)</label><input class="form-control" name="nom_medecin_ar" dir="rtl" value="{{ clinic.nom_medecin_ar or '' }}"></div>
+                <div class="form-group"><label class="form-label">Spécialité (AR)</label><input class="form-control" name="specialite_ar" dir="rtl" value="{{ clinic.specialite_ar or '' }}"></div>
+                <div class="form-group"><label class="form-label">Adresse (AR)</label><input class="form-control" name="adresse_ar" dir="rtl" value="{{ clinic.adresse_ar or '' }}"></div>
+                <div class="form-group"><label class="form-label">Pied de page (AR)</label><input class="form-control" name="pied_de_page_ar" dir="rtl" value="{{ clinic.pied_de_page_ar or '' }}"></div>
+            </div>
+            <div id="lang-panel-en" style="display:none;">
+                <div class="form-group"><label class="form-label">Clinic name (EN)</label><input class="form-control" name="nom_clinique_en" value="{{ clinic.nom_clinique_en or '' }}"></div>
+                <div class="form-group"><label class="form-label">Doctor name (EN)</label><input class="form-control" name="nom_medecin_en" value="{{ clinic.nom_medecin_en or '' }}"></div>
+                <div class="form-group"><label class="form-label">Specialty (EN)</label><input class="form-control" name="specialite_en" value="{{ clinic.specialite_en or '' }}"></div>
+                <div class="form-group"><label class="form-label">Address (EN)</label><input class="form-control" name="adresse_en" value="{{ clinic.adresse_en or '' }}"></div>
+                <div class="form-group"><label class="form-label">Footer (EN)</label><input class="form-control" name="pied_de_page_en" value="{{ clinic.pied_de_page_en or '' }}"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" style="margin-bottom:16px;">Logo, signature et cachet</div>
+            <div class="form-row" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="form-group">
+                    <label class="form-label">Logo</label>
+                    {% if clinic.logo_path %}<div class="text-muted" style="font-size:11px;margin-bottom:4px;">✓ Logo actuel défini</div>{% endif %}
+                    <input class="form-control" type="file" name="logo" accept="image/*">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Signature</label>
+                    {% if clinic.signature_path %}<div class="text-muted" style="font-size:11px;margin-bottom:4px;">✓ Signature définie</div>{% endif %}
+                    <input class="form-control" type="file" name="signature" accept="image/*">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cachet</label>
+                    {% if clinic.cachet_path %}<div class="text-muted" style="font-size:11px;margin-bottom:4px;">✓ Cachet défini</div>{% endif %}
+                    <input class="form-control" type="file" name="cachet" accept="image/*">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" style="margin-bottom:16px;">Préférences</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Devise</label>
+                    <select class="form-control" name="devise">
+                        {% for d in ['DZD','EUR','USD','MAD','TND'] %}<option value="{{ d }}" {{ 'selected' if clinic.devise == d }}>{{ d }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Format papier des documents</label>
+                    <select class="form-control" name="format_papier">
+                        <option value="A4" {{ 'selected' if clinic.format_papier == 'A4' }}>A4</option>
+                        <option value="A5" {{ 'selected' if clinic.format_papier == 'A5' }}>A5</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Fuseau horaire</label><input class="form-control" name="fuseau_horaire" value="{{ clinic.fuseau_horaire or 'Africa/Algiers' }}"></div>
+                <div class="form-group"><label class="form-label">Seuil de stock bas par défaut</label><input class="form-control" type="number" name="seuil_stock_bas" value="{{ clinic.seuil_stock_bas or 10 }}"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" style="margin-bottom:14px;">Style des documents imprimables</div>
+            <p class="text-muted" style="font-size:12.5px;margin-bottom:14px;">
+                S'applique aux ordonnances, demandes de laboratoire/radiologie et documents personnalisés.
+            </p>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                {% for key, label in template_styles.items() %}
+                <label class="flex items-center gap-2" style="padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;{{ 'border-color:var(--primary);background:var(--primary-light);' if clinic.documents_template == key or (not clinic.documents_template and key == 'classique') }}">
+                    <input type="radio" name="documents_template" value="{{ key }}" {{ 'checked' if clinic.documents_template == key or (not clinic.documents_template and key == 'classique') }}>
+                    <span style="font-size:13px;font-weight:600;">{{ label }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:18px;">
+        <div class="card">
+            <div class="card-title" style="margin-bottom:14px;">Thème d'affichage</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                {% for key, label in themes.items() %}
+                <button type="button" class="btn {{ 'btn-primary' if clinic.theme == key else 'btn-secondary' }} btn-block" style="justify-content:flex-start;" onclick="setTheme('{{ key }}')">
+                    {{ label }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title" style="margin-bottom:10px;">Abonnement</div>
+            <div style="font-size:13px;display:flex;flex-direction:column;gap:6px;">
+                <div><span class="text-muted">Plan :</span> {{ clinic.plan }}</div>
+                <div><span class="text-muted">Statut :</span> <span class="badge badge-{{ 'success' if clinic.statut == 'actif' else 'warning' }}">{{ clinic.statut }}</span></div>
+                {% if clinic.date_expiration_abonnement %}<div><span class="text-muted">Expire le :</span> {{ clinic.date_expiration_abonnement }}</div>{% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" style="margin-bottom:10px;">Thème de l'écran d'attente (TV)</div>
+            <select class="form-control" name="ecran_theme">
+                <option value="sombre" {{ 'selected' if (clinic.ecran_theme or 'sombre') == 'sombre' }}>Premium Dark (actuel)</option>
+                <option value="bleu" {{ 'selected' if clinic.ecran_theme == 'bleu' }}>Modern Medical Blue</option>
+                <option value="minimal" {{ 'selected' if clinic.ecran_theme == 'minimal' }}>Elegant Minimal</option>
+            </select>
+        </div>
+
+        <div class="card">
+            <div class="card-title" style="margin-bottom:10px;">Carte professionnelle digitale</div>
+            <div class="form-group"><label class="form-label">Photo du médecin</label><input class="form-control" type="file" name="carte_photo" accept="image/*"></div>
+            <div class="form-group"><label class="form-label">Biographie courte</label><textarea class="form-control" name="carte_bio" rows="3">{{ clinic.carte_bio or '' }}</textarea></div>
+            <div class="form-group"><label class="form-label">Langues parlées</label><input class="form-control" name="carte_langues" value="{{ clinic.carte_langues or '' }}" placeholder="Français, Arabe, Anglais"></div>
+            <a href="{{ url_for('site.digital_card', clinic_id=clinic.id) }}" target="_blank" class="btn btn-secondary btn-block btn-sm">Aperçu de la carte ↗</a>
+        </div>
+    </div>
+</div>
+</form>
+<script>
+function switchLangTab(code) {
+    document.getElementById('lang-panel-ar').style.display = code === 'ar' ? 'block' : 'none';
+    document.getElementById('lang-panel-en').style.display = code === 'en' ? 'block' : 'none';
+    document.getElementById('tab-ar').classList.toggle('active', code === 'ar');
+    document.getElementById('tab-en').classList.toggle('active', code === 'en');
+}
+</script>
+{% endblock %}

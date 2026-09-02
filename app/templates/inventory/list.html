@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Stock{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Stock</div>
+        <div class="page-subtitle">{{ stats.total }} article(s) — médicaments, équipements, fournitures…</div>
+    </div>
+    <a href="{{ url_for('inventory.create_medicine') }}" class="btn btn-primary">+ Ajouter un article</a>
+</div>
+
+<div class="grid grid-3" style="margin-bottom:18px;">
+    <a href="{{ url_for('inventory.list_medicines') }}" class="stat-card">
+        <div class="stat-label">Total médicaments</div>
+        <div class="stat-value" style="font-size:22px;">{{ stats.total }}</div>
+    </a>
+    <a href="{{ url_for('inventory.list_medicines', filtre='stock_bas') }}" class="stat-card">
+        <div class="stat-label">Stock bas</div>
+        <div class="stat-value" style="font-size:22px;color:var(--warning);">{{ stats.stock_bas }}</div>
+    </a>
+    <a href="{{ url_for('inventory.list_medicines', filtre='expire') }}" class="stat-card">
+        <div class="stat-label">Expirés</div>
+        <div class="stat-value" style="font-size:22px;color:var(--danger);">{{ stats.expire }}</div>
+    </a>
+</div>
+
+<div class="card" style="margin-bottom:18px;">
+    <form method="GET" class="flex gap-2">
+        <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Rechercher un médicament, catégorie, fournisseur…">
+        <select class="form-control" name="type" style="max-width:220px;">
+            <option value="">Tous les types</option>
+            {% for key, label in types_article.items() %}<option value="{{ key }}" {{ 'selected' if type_article == key }}>{{ label }}</option>{% endfor %}
+        </select>
+        <input type="hidden" name="filtre" value="{{ filtre }}">
+        <button class="btn btn-secondary" type="submit">Rechercher</button>
+        {% if q or filtre %}<a href="{{ url_for('inventory.list_medicines') }}" class="btn btn-ghost">Réinitialiser</a>{% endif %}
+    </form>
+</div>
+
+<div class="card">
+    {% if medicaments %}
+    <div class="table-wrap">
+    <table class="data-table">
+        <thead><tr><th>Article</th><th>Type</th><th>Catégorie</th><th>Fournisseur</th><th>Quantité</th><th>Prix vente</th><th>Expiration</th><th></th></tr></thead>
+        <tbody>
+        {% for m in medicaments %}
+            <tr>
+                <td style="font-weight:600;">{{ m.nom }}</td>
+                <td><span class="badge badge-neutral">{{ types_article.get(m.type_article, m.type_article or 'Médicament') }}</span></td>
+                <td class="text-muted">{{ m.categorie or '—' }}</td>
+                <td class="text-muted">{{ m.fournisseur or '—' }}</td>
+                <td>
+                    {{ m.quantite }}
+                    {% if m.quantite <= m.quantite_min %}<span class="badge badge-warning">Stock bas</span>{% endif %}
+                </td>
+                <td>{{ m.prix_vente|money if m.prix_vente else '—' }}</td>
+                <td>
+                    {% if m.date_expiration %}
+                        {{ m.date_expiration|date_fr }}
+                        {% if m.date_expiration|string <= today_iso %}<span class="badge badge-danger">Expiré</span>{% endif %}
+                    {% else %}—{% endif %}
+                </td>
+                <td class="flex gap-2">
+                    <a href="{{ url_for('inventory.edit_medicine', med_id=m.id) }}" class="btn btn-ghost btn-sm">Modifier</a>
+                    <form method="POST" action="{{ url_for('inventory.delete_medicine', med_id=m.id) }}" onsubmit="return confirm('Supprimer ce médicament ?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn-danger btn-sm" type="submit">Suppr.</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><p>Aucun article dans le stock.</p></div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Facture {{ facture.numero_facture }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Facture {{ facture.numero_facture }}</div>
+        <div class="page-subtitle">{{ facture.prenom }} {{ facture.nom }} — {{ facture.date_facture|date_fr }}</div>
+    </div>
+    <a href="{{ url_for('billing.download_invoice_pdf', facture_id=facture.id) }}" class="btn btn-secondary btn-sm" style="margin-right:8px;">Télécharger PDF</a>
+    <button class="btn btn-primary" onclick="openPaperSizeModal('{{ url_for('billing.print_invoice', facture_id=facture.id) }}', '{{ url_for('billing.download_invoice_pdf', facture_id=facture.id) }}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+        Imprimer
+    </button>
+</div>
+
+<div class="grid" style="grid-template-columns: 2fr 1fr; align-items:start; gap:20px;">
+    <div class="card">
+        <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr><th>Désignation</th><th>Qté</th><th>P.U.</th><th>Total</th></tr></thead>
+            <tbody>
+            {% for l in lignes %}
+                <tr><td>{{ l.designation }}</td><td>{{ l.quantite }}</td><td>{{ l.prix_unitaire|money }}</td><td>{{ (l.quantite * l.prix_unitaire)|money }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <div class="card">
+        <div class="flex justify-between" style="margin-bottom:8px;"><span class="text-muted">Total</span><strong>{{ facture.montant_total|money }}</strong></div>
+        <div class="flex justify-between" style="margin-bottom:8px;"><span class="text-muted">Payé</span><strong>{{ facture.montant_paye|money }}</strong></div>
+        <div class="flex justify-between" style="margin-bottom:16px;"><span class="text-muted">Restant dû</span><strong class="text-danger">{{ (facture.montant_total - facture.montant_paye)|money }}</strong></div>
+        <span class="badge badge-{{ 'success' if facture.statut == 'paye' else ('warning' if facture.statut == 'partiel' else 'danger') }}" style="margin-bottom:18px;display:inline-block;">{{ facture.statut }}</span>
+
+        {% if facture.statut != 'paye' %}
+        <form method="POST" action="{{ url_for('billing.update_payment', facture_id=facture.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label class="form-label">Mettre à jour le montant payé</label>
+                <input class="form-control" type="number" step="0.01" name="montant_paye" value="{{ facture.montant_paye }}">
+            </div>
+            <button class="btn btn-primary btn-block" type="submit">Enregistrer le paiement</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

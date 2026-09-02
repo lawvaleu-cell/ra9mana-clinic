@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ titre }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">{{ titre }} — {{ patient.prenom }} {{ patient.nom }}</div>
+        <div class="page-subtitle">{{ demande.date_str }}</div>
+    </div>
+    <div class="flex gap-2">
+        <button class="btn btn-primary" onclick="openPaperSizeModal('{{ url_for('prescriptions.print_' + ('lab_request' if type_route == 'laboratoire' else 'radio_request'), request_id=demande.id) }}', '{{ url_for('prescriptions.download_' + ('lab_pdf' if type_route == 'laboratoire' else 'radio_pdf'), request_id=demande.id) }}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+            Imprimer
+        </button>
+    </div>
+</div>
+<div class="card" style="max-width:700px;">
+    <strong>{{ 'Analyses demandées' if type_route == 'laboratoire' else 'Examens demandés' }} :</strong>
+    <ul style="margin-top:10px;">
+        {% for ligne in (demande.analyses if type_route == 'laboratoire' else demande.examens).split('\n') if ligne.strip() %}
+        <li style="margin-bottom:6px;">{{ ligne.strip() }}</li>
+        {% endfor %}
+    </ul>
+    {% if demande.notes %}<div style="margin-top:16px;"><strong>Notes cliniques :</strong> {{ demande.notes }}</div>{% endif %}
+</div>
+{% endblock %}

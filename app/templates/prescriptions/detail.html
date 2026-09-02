@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Ordonnance{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Ordonnance — {{ prescription.prenom }} {{ prescription.nom }}</div>
+        <div class="page-subtitle">{{ prescription.date_prescription|datetime_fr }}</div>
+    </div>
+    <a href="{{ url_for('prescriptions.download_prescription_pdf', prescription_id=prescription.id) }}" class="btn btn-secondary btn-sm" style="margin-right:8px;">Télécharger PDF</a>
+    <button class="btn btn-primary" onclick="openPaperSizeModal('{{ url_for('prescriptions.print_prescription', prescription_id=prescription.id) }}', '{{ url_for('prescriptions.download_prescription_pdf', prescription_id=prescription.id) }}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+        Imprimer
+    </button>
+</div>
+
+<div class="card" style="max-width:700px;">
+    {% for l in lignes %}
+    <div style="padding:14px 0;border-bottom:1px solid var(--border);">
+        <strong>{{ loop.index }}. {{ l.medicament }}</strong>
+        <div class="text-muted" style="font-size:13px;margin-top:4px;">{{ l.dosage or '' }} {{ l.frequence or '' }} {{ l.duree or '' }}</div>
+        {% if l.instructions %}<div style="font-size:12.5px;font-style:italic;margin-top:4px;">{{ l.instructions }}</div>{% endif %}
+    </div>
+    {% endfor %}
+    {% if prescription.notes %}
+    <div style="margin-top:16px;"><strong>Notes :</strong> {{ prescription.notes }}</div>
+    {% endif %}
+</div>
+{% endblock %}

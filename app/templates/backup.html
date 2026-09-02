@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Sauvegarde{% endblock %}
+{% block content %}
+<div class="page-header"><div class="page-title">Sauvegarde et restauration</div></div>
+
+<div class="grid grid-2" style="align-items:start;">
+    <div class="card">
+        <div class="card-title" style="margin-bottom:10px;">Exporter une sauvegarde</div>
+        <p class="text-muted" style="font-size:13px;margin-bottom:16px;">
+            Téléchargez une copie complète des données de votre clinique (patients, rendez-vous, ordonnances, inventaire, factures, dépenses) au format JSON.
+        </p>
+        <div style="margin-bottom:16px;">
+            {% for table, count in counts.items() %}
+            <div class="flex justify-between" style="padding:6px 0;font-size:13px;"><span class="text-muted">{{ table }}</span><strong>{{ count }}</strong></div>
+            {% endfor %}
+        </div>
+        <a href="{{ url_for('backup.export_backup') }}" class="btn btn-primary btn-block">Télécharger la sauvegarde (.json)</a>
+    </div>
+
+    <div class="card">
+        <div class="card-title" style="margin-bottom:10px;">Restaurer une sauvegarde</div>
+        <p class="text-muted" style="font-size:13px;margin-bottom:16px;">
+            ⚠ La restauration remplace les patients, l'inventaire et les dépenses actuels par ceux du fichier importé. Cette action est irréversible.
+        </p>
+        <form method="POST" action="{{ url_for('backup.restore_backup') }}" enctype="multipart/form-data" onsubmit="return confirm('Cette action va remplacer vos données actuelles. Continuer ?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <input class="form-control" type="file" name="fichier_sauvegarde" accept=".json" required>
+            </div>
+            <button type="submit" class="btn btn-danger btn-block">Restaurer les données</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

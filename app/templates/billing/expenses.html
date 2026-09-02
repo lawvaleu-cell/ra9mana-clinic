@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Dépenses{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Dépenses</div>
+        <div class="page-subtitle">Total ce mois-ci : {{ total_mois|money }}</div>
+    </div>
+    <button class="btn btn-primary" onclick="openModal('modal-depense')">+ Nouvelle dépense</button>
+</div>
+
+<div class="card">
+    {% if depenses %}
+    <div class="table-wrap">
+    <table class="data-table">
+        <thead><tr><th>Catégorie</th><th>Description</th><th>Montant</th><th>Date</th><th></th></tr></thead>
+        <tbody>
+        {% for d in depenses %}
+            <tr>
+                <td><span class="badge badge-neutral">{{ d.categorie }}</span></td>
+                <td class="text-muted">{{ d.description or '—' }}</td>
+                <td style="font-weight:600;">{{ d.montant|money }}</td>
+                <td class="text-muted">{{ d.date_depense|date_fr }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('billing.delete_expense', dep_id=d.id) }}" onsubmit="return confirm('Supprimer cette dépense ?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn-danger btn-sm" type="submit">Suppr.</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><p>Aucune dépense enregistrée.</p></div>
+    {% endif %}
+</div>
+
+<div class="modal-overlay" id="modal-depense">
+    <div class="modal-box">
+        <div class="modal-header"><div class="card-title">Nouvelle dépense</div><button class="icon-btn" onclick="closeModal('modal-depense')">✕</button></div>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label class="form-label">Catégorie <span class="required">*</span></label>
+                <select class="form-control" name="categorie" required>
+                    <option value="salaire">Salaire employé</option>
+                    <option value="loyer">Loyer</option>
+                    <option value="electricite">Électricité</option>
+                    <option value="internet">Internet</option>
+                    <option value="taxes">Taxes</option>
+                    <option value="fournitures">Fournitures médicales</option>
+                    <option value="autre">Autre</option>
+                </select>
+            </div>
+            <div class="form-group"><label class="form-label">Description</label><input class="form-control" name="description"></div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Montant <span class="required">*</span></label><input class="form-control" type="number" step="0.01" name="montant" required></div>
+                <div class="form-group"><label class="form-label">Date</label><input class="form-control" type="date" name="date_depense" value="{{ today }}"></div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Enregistrer</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

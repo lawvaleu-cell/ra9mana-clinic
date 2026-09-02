@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accès refusé — {{ app_name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}"></head>
+<body>
+<div class="auth-page">
+    <div class="auth-card" style="text-align:center;">
+        <div style="font-size:52px;font-weight:800;font-family:var(--font-display);color:var(--danger);">403</div>
+        <h2 style="margin:8px 0;">Accès refusé</h2>
+        <p class="text-secondary" style="margin-bottom:22px;">Vous n'avez pas la permission d'accéder à cette page.</p>
+        <a class="btn btn-primary" href="/">Retour à l'accueil</a>
+    </div>
+</div>
+</body></html>

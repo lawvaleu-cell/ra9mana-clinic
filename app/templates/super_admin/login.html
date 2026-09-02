@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>Connexion Super Admin — {{ app_name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+<div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}
+    {% endwith %}
+</div>
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-logo">⚙️ Super Admin</div>
+        <p class="text-secondary" style="margin:0 0 24px;font-size:13px;">Accès réservé au propriétaire du logiciel.</p>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group"><label class="form-label">E-mail</label><input class="form-control" type="email" name="email" required autofocus></div>
+            <div class="form-group"><label class="form-label">Mot de passe</label><input class="form-control" type="password" name="mot_de_passe" required></div>
+            <button type="submit" class="btn btn-primary btn-block">Se connecter</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,54 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Annonces globales{% endblock %}
+{% block content %}
+<div class="page-header"><div class="page-title">Annonces globales</div></div>
+
+<div class="grid" style="grid-template-columns: 1fr 1.3fr; align-items:start; gap:20px;">
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Nouvelle annonce</div>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group"><label class="form-label">Titre</label><input class="form-control" name="titre" required></div>
+            <div class="form-group"><label class="form-label">Message</label><textarea class="form-control" name="message" rows="4" required></textarea></div>
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-control" name="type">
+                    <option value="information">Information</option>
+                    <option value="avertissement">Avertissement</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="mise_a_jour">Mise à jour</option>
+                    <option value="urgence">Urgence</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Cible</label>
+                <select class="form-control" name="cible" id="cible-select" onchange="document.getElementById('clinic-select-group').style.display = this.value === 'specifique' ? 'block' : 'none';">
+                    <option value="toutes">Toutes les cliniques</option>
+                    <option value="specifique">Une clinique spécifique</option>
+                </select>
+            </div>
+            <div class="form-group" id="clinic-select-group" style="display:none;">
+                <label class="form-label">Clinique</label>
+                <select class="form-control" name="clinic_id">
+                    {% for c in cliniques %}<option value="{{ c.id }}">{{ c.nom_clinique }}</option>{% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Diffuser l'annonce</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Historique des annonces</div>
+        {% for a in annonces %}
+        <div style="padding:12px 0;border-bottom:1px solid var(--border);">
+            <div class="flex justify-between items-center">
+                <strong style="font-size:13.3px;">{{ a.titre }}</strong>
+                <span class="badge badge-neutral">{{ a.type }}</span>
+            </div>
+            <p style="font-size:12.8px;margin:4px 0;">{{ a.message }}</p>
+            <div class="text-muted" style="font-size:11px;">{{ a.nom_clinique or 'Toutes les cliniques' }} • {{ a.date_creation|datetime_fr }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

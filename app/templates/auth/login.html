@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if is_rtl else 'ltr' }}" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>{{ t('auth.login') }} — {{ app_name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<link rel="icon" href="{{ url_for('documents.serve_upload', filename=site_logo.split('/')[-1]) if site_logo else url_for('static', filename='icons/icon-192.png') }}">
+</head>
+<body>
+<div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}
+    {% endwith %}
+</div>
+
+<div class="auth-split">
+    <div class="auth-split-illustration" style="--auth-illustration-url:url('{{ url_for('static', filename='brand/photos/clinic-reception.jpg') }}');">
+        <div class="auth-lang-row">
+            {% for code, label in supported_languages.items() %}
+            <a href="{{ url_for('site.set_language', code=code) }}" class="{{ 'active' if lang == code }}">{{ code|upper }}</a>
+            {% endfor %}
+        </div>
+        <div class="auth-split-brand">
+            <img src="{{ url_for('documents.serve_upload', filename=site_logo.split('/')[-1]) if site_logo else url_for('static', filename='brand/logo.png') }}" alt="{{ app_name }}">
+            {{ app_name }}
+        </div>
+        <div class="auth-split-quote">
+            <span class="quote-mark">“</span>
+            <p>RA9MANA Clinic a transformé la gestion administrative de mon cabinet — mes patients adorent la nouvelle salle d'attente digitale.</p>
+            <div class="quote-author">Dr. Sara B. — Médecin généraliste</div>
+        </div>
+    </div>
+
+    <div class="auth-split-form {{ 'has-bg-image' if site_bg_login }}" {% if site_bg_login %}style="background-image:url('{{ url_for('documents.serve_upload', filename=site_bg_login.split('/')[-1]) }}');"{% endif %}>
+        <div class="auth-card" style="box-shadow:none;border:none;">
+            <div class="auth-logo">
+                <img src="{{ url_for('documents.serve_upload', filename=site_logo.split('/')[-1]) if site_logo else url_for('static', filename='brand/logo.png') }}" alt="{{ app_name }}" style="width:36px;height:36px;border-radius:10px;object-fit:contain;">
+                {{ app_name }}
+            </div>
+            <h2 style="margin:0 0 4px;">{{ t('auth.login_title') }}</h2>
+            <p class="text-secondary" style="margin:0 0 24px;font-size:13.5px;">{{ t('auth.login_subtitle') }}</p>
+
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group">
+                    <label class="form-label">{{ t('auth.email') }}</label>
+                    <input class="form-control" type="email" name="email" value="{{ email }}" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ t('auth.password') }}</label>
+                    <input class="form-control" type="password" name="mot_de_passe" required>
+                </div>
+                <div class="flex justify-between items-center" style="margin-bottom:20px;">
+                    <label class="checkbox-row" style="font-size:13px;color:var(--text-secondary);">
+                        <input type="checkbox" name="se_souvenir"> {{ t('auth.remember') }}
+                    </label>
+                    <a href="{{ url_for('auth.forgot_password') }}" style="font-size:13px;color:var(--primary);font-weight:600;">{{ t('auth.forgot') }}</a>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">{{ t('auth.login') }}</button>
+            </form>
+
+            <p style="text-align:center;margin-top:22px;font-size:13.3px;color:var(--text-secondary);">
+                {{ t('auth.no_account') }} <a href="{{ url_for('auth.register') }}" style="color:var(--primary);font-weight:600;">{{ t('auth.create_account') }}</a>
+            </p>
+            <p style="text-align:center;margin-top:10px;">
+                <a href="{{ url_for('site.landing') }}" style="font-size:12.5px;color:var(--text-muted);">← Retour à l'accueil</a>
+            </p>
+        </div>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

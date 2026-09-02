@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Centre de notifications</div>
+        <div class="page-subtitle">{{ notifications|length }} notification(s)</div>
+    </div>
+    <form method="POST" action="{{ url_for('notifications.mark_all_read') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-secondary btn-sm" type="submit">Tout marquer comme lu</button>
+    </form>
+</div>
+
+<div class="card" style="margin-bottom:18px;">
+    <form method="GET" class="flex gap-2" style="flex-wrap:wrap;">
+        <input class="form-control" name="q" value="{{ q }}" placeholder="Rechercher…" style="flex:1;min-width:180px;">
+        <select class="form-control" name="categorie" style="max-width:180px;">
+            <option value="">Toutes catégories</option>
+            {% for cat in categories %}<option value="{{ cat }}" {{ 'selected' if categorie == cat }}>{{ cat }}</option>{% endfor %}
+        </select>
+        <select class="form-control" name="priorite" style="max-width:160px;">
+            <option value="">Toute priorité</option>
+            <option value="haute" {{ 'selected' if priorite == 'haute' }}>Haute</option>
+            <option value="normale" {{ 'selected' if priorite == 'normale' }}>Normale</option>
+        </select>
+        <select class="form-control" name="statut" style="max-width:160px;">
+            <option value="">Tous statuts</option>
+            <option value="non_lu" {{ 'selected' if statut == 'non_lu' }}>Non lues</option>
+            <option value="lu" {{ 'selected' if statut == 'lu' }}>Lues</option>
+        </select>
+        <button class="btn btn-secondary" type="submit">Filtrer</button>
+    </form>
+</div>
+
+<div class="card">
+    {% if notifications %}
+    <div style="display:flex;flex-direction:column;gap:2px;">
+        {% for n in notifications %}
+        <div class="flex items-start gap-3" style="padding:14px;border-radius:var(--radius-sm);{{ 'background:var(--primary-light);' if not n.lu }}">
+            <span style="font-size:18px;">{% if n.type == 'alerte' %}⚠️{% elif n.type == 'systeme' %}📢{% elif n.type == 'rappel' %}⏰{% else %}ℹ️{% endif %}</span>
+            <div style="flex:1;">
+                <div class="flex items-center gap-2">
+                    <div style="font-weight:600;font-size:13.3px;">{{ n.titre }}</div>
+                    {% if n.priorite == 'haute' %}<span class="badge badge-danger" style="font-size:9.5px;">Priorité haute</span>{% endif %}
+                    {% if n.categorie and n.categorie != 'general' %}<span class="badge badge-neutral" style="font-size:9.5px;">{{ n.categorie }}</span>{% endif %}
+                </div>
+                {% if n.message %}<div class="text-muted" style="font-size:12.5px;margin-top:2px;">{{ n.message }}</div>{% endif %}
+                <div class="text-muted" style="font-size:11px;margin-top:4px;">{{ n.date_creation|datetime_fr }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state"><p>Aucune notification ne correspond à votre recherche.</p></div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Journaux{% endblock %}
+{% block content %}
+<div class="page-header"><div class="page-title">Journaux système</div></div>
+
+<div class="card" style="margin-bottom:18px;">
+    <div class="stat-label">Tentatives de connexion échouées (24h)</div>
+    <div class="stat-value" style="color:{{ 'var(--danger)' if echecs_24h > 10 else 'var(--text-primary)' }};">{{ echecs_24h }}</div>
+</div>
+
+<div class="grid grid-2" style="align-items:start;">
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Historique de connexion</div>
+        <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr><th>E-mail</th><th>Résultat</th><th>IP</th><th>Date</th></tr></thead>
+            <tbody>
+            {% for c in connexions %}
+                <tr>
+                    <td>{{ c.email }}</td>
+                    <td>{% if c.succes %}<span class="badge badge-success">Réussi</span>{% else %}<span class="badge badge-danger">Échoué</span>{% endif %}</td>
+                    <td class="text-muted">{{ c.adresse_ip or '—' }}</td>
+                    <td class="text-muted">{{ c.date_creation|datetime_fr }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Journal d'audit (toutes cliniques)</div>
+        <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr><th>Clinique</th><th>Utilisateur</th><th>Action</th><th>Date</th></tr></thead>
+            <tbody>
+            {% for a in audit %}
+                <tr>
+                    <td class="text-muted">{{ a.nom_clinique or '—' }}</td>
+                    <td>{{ a.nom_complet or '—' }}</td>
+                    <td><span class="badge badge-neutral">{{ a.action }}</span></td>
+                    <td class="text-muted">{{ a.date_creation|datetime_fr }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

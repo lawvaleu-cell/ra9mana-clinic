@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if is_rtl else 'ltr' }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="{{ content.hero_sous_titre or 'RA9MANA Clinic — plateforme SaaS de gestion de cabinet médical' }}">
+<title>{{ app_name }} — Logiciel de gestion de cabinet médical</title>
+<link rel="manifest" href="{{ url_for('site.manifest') }}">
+<meta name="theme-color" content="#17324A">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+<link rel="icon" href="{{ url_for('documents.serve_upload', filename=site_logo.split('/')[-1]) if site_logo else url_for('static', filename='icons/icon-192.png') }}">
+</head>
+<body class="lp-body" dir="{{ 'rtl' if is_rtl else 'ltr' }}">
+
+<nav class="lp-navbar">
+    <div class="lp-navbar-inner">
+        <div class="lp-logo"><img src="{{ url_for('documents.serve_upload', filename=site_logo.split('/')[-1]) if site_logo else url_for('static', filename='brand/logo.png') }}" alt="{{ app_name }}" style="height:28px;width:auto;border-radius:6px;background:#fff;"> {{ app_name }}</div>
+        <a href="{{ url_for('auth.login') }}" class="lp-nav-signin">{{ t('landing.nav_login') }}</a>
+        <div class="lp-lang-switch">
+            {% for code, label in supported_languages.items() %}
+            <a href="{{ url_for('site.set_language', code=code) }}" class="{{ 'active' if lang == code }}">{{ code|upper }}</a>
+            {% endfor %}
+        </div>
+    </div>
+</nav>
+
+<header class="lp-hero" {% if site_bg_landing %}style="--lp-hero-bg-url:url('{{ url_for('documents.serve_upload', filename=site_bg_landing.split('/')[-1]) }}');"{% endif %}>
+    <div class="lp-container lp-hero-grid">
+        <span class="lp-badge">🇩🇿 Plateforme Algérienne 100%</span>
+        <span class="lp-badge">✨ 14 jours d'essai gratuit</span>
+        <h1>{{ content.hero_titre }}</h1>
+        <p class="lp-lead">{{ content.hero_sous_titre }}</p>
+    </div>
+</header>
+
+<div class="lp-quicklinks-wrap">
+    <div class="lp-quicklinks">
+        <a href="#fonctionnalites">{{ t('landing.nav_features') }}</a>
+        <a href="#tarifs">{{ t('landing.nav_pricing') }}</a>
+        <a href="#temoignages">{{ t('landing.testimonials_title') }}</a>
+        <a href="#faq">{{ t('landing.nav_faq') }}</a>
+        <a href="#contact">{{ t('landing.nav_contact') }}</a>
+    </div>
+</div>
+
+<div class="lp-cta-dock">
+    <a href="{{ url_for('auth.login') }}" class="lp-btn lp-btn-ghost">{{ t('landing.nav_login') }}</a>
+    <button class="lp-btn lp-install-btn" id="pwa-install-btn" style="display:none;">⬇️ {{ t('landing.install_app') }}</button>
+    <a href="{{ url_for('auth.register') }}" class="lp-btn lp-btn-primary">{{ t('landing.hero_cta') }}</a>
+</div>
+
+<section class="lp-section lp-trust">
+    <div class="lp-container">
+        <div class="lp-trust-card">
+            <img class="lp-trust-photo" src="{{ url_for('static', filename='brand/photos/doctor-portrait.jpg') }}" alt="Médecin utilisant {{ app_name }}">
+            <div class="lp-trust-text">
+                <p>« {{ content.pourquoi_texte or "Une plateforme pensée avec des médecins, pour simplifier chaque journée de consultation." }} »</p>
+                <div class="lp-trust-author">{{ t('landing.testimonials_title') }}</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if ads %}
+<div class="lp-container" style="margin-bottom:30px;">
+    <div class="lp-ads-strip">
+        {% for ad in ads %}
+        <div class="lp-ad-card">
+            {% if ad.image_path %}<img src="{{ url_for('documents.serve_upload', filename=ad.image_path.split('/')[-1]) }}" alt="{{ ad.titre }}" loading="lazy">{% endif %}
+            <div class="lp-ad-card-body">
+                <h4>{{ ad.titre }}</h4>
+                {% if ad.description %}<p>{{ ad.description }}</p>{% endif %}
+                {% if ad.lien_url %}<a href="{{ ad.lien_url }}" class="lp-btn lp-btn-ghost" style="padding:7px 14px;font-size:12px;" target="_blank">{{ ad.texte_bouton }}</a>{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<section class="lp-section" id="fonctionnalites">
+    <div class="lp-container">
+        <div class="lp-section-head">
+            <h2>{{ t('landing.features_title') }}</h2>
+            <p>{{ content.pourquoi_texte }}</p>
+        </div>
+        <div class="lp-features-grid">
+            {% for titre, description, emoji in fonctionnalites %}
+            <div class="lp-feature-card">
+                <div class="lp-feature-icon">{{ emoji or '⭐' }}</div>
+                <h3>{{ titre }}</h3>
+                <p>{{ description }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="lp-section lp-section-alt" id="tarifs">
+    <div class="lp-container">
+        <div class="lp-section-head">
+            <h2>{{ t('landing.pricing_title') }}</h2>
+            <p class="lp-pricing-subtitle">Choisissez la formule qui convient à votre cabinet — changez d'avis à tout moment.</p>
+        </div>
+
+        {% set m = content.tarif_mensuel_prix|float(0) %}
+        {% set a = content.tarif_annuel_prix|float(0) %}
+        {% set savings_pct = ((1 - (a / 12) / m) * 100)|round|int if m > 0 and a > 0 else 0 %}
+
+        <div class="lp-billing-toggle" id="billing-toggle">
+            <button type="button" class="lp-toggle-option active" data-plan="mensuel">Mensuel</button>
+            <span class="lp-toggle-switch" id="toggle-switch"><span class="lp-toggle-knob"></span></span>
+            <button type="button" class="lp-toggle-option" data-plan="annuel">
+                Annuel
+                {% if savings_pct > 0 %}<span class="lp-toggle-save">-{{ savings_pct }}%</span>{% endif %}
+            </button>
+        </div>
+
+        <div class="lp-pricing-grid">
+            <div class="lp-price-card" data-plan="mensuel">
+                <div class="lp-price-card-inner">
+                    <div class="lp-price-icon" style="background:linear-gradient(135deg,#6EE7C8,#34D399);">💳</div>
+                    <div class="lp-price-plan-name">Mensuel</div>
+                    <div class="lp-price-amount">{{ content.tarif_mensuel_prix }}<span>DZD /mois</span></div>
+                    <div class="lp-price-tagline">Facturation flexible, sans engagement</div>
+                    <div class="lp-price-divider"></div>
+                    <ul class="lp-price-features">
+                        <li><span class="lp-check">✓</span> Patients illimités</li>
+                        <li><span class="lp-check">✓</span> Toutes les fonctionnalités</li>
+                        <li><span class="lp-check">✓</span> Support prioritaire</li>
+                    </ul>
+                    <a href="{{ url_for('auth.register') }}" class="lp-price-cta">Commencer maintenant</a>
+                </div>
+            </div>
+            <div class="lp-price-card featured" data-plan="annuel">
+                <span class="lp-tag">✨ Plus Populaire</span>
+                <div class="lp-price-card-inner">
+                    <div class="lp-price-icon" style="background:linear-gradient(135deg,#B08CF5,#7C5CE0);">🚀</div>
+                    <div class="lp-price-plan-name">Annuel</div>
+                    <div class="lp-price-amount">{{ content.tarif_annuel_prix }}<span>DZD /an</span></div>
+                    <div class="lp-price-tagline">
+                        {% if savings_pct > 0 %}Économisez {{ savings_pct }}% par rapport au mensuel{% else %}2 mois offerts — le meilleur rapport qualité/prix{% endif %}
+                    </div>
+                    <div class="lp-price-divider"></div>
+                    <ul class="lp-price-features">
+                        <li><span class="lp-check">✓</span> Patients illimités</li>
+                        <li><span class="lp-check">✓</span> Toutes les fonctionnalités</li>
+                        <li><span class="lp-check">✓</span> Support prioritaire</li>
+                        <li><span class="lp-check">✓</span> 2 mois offerts</li>
+                    </ul>
+                    <a href="{{ url_for('auth.register') }}" class="lp-price-cta">Choisir Annuel</a>
+                </div>
+            </div>
+        </div>
+        <div class="lp-trust-row">
+            <div class="lp-trust-item">🔒 <span>Paiement sécurisé</span></div>
+            <div class="lp-trust-item">⚡ <span>Annulation à tout moment</span></div>
+            <div class="lp-trust-item">🌍 <span>FR · AR · EN</span></div>
+            <div class="lp-trust-item">📱 <span>Mobile & ordinateur</span></div>
+        </div>
+    </div>
+</section>
+
+<section class="lp-section" id="temoignages">
+    <div class="lp-container">
+        <div class="lp-section-head">
+            <h2>{{ t('landing.testimonials_title') }}</h2>
+        </div>
+        <div class="lp-testimonials-grid">
+            {% for nom, role, texte in temoignages %}
+            <div class="lp-testimonial-card">
+                <p>« {{ texte }} »</p>
+                <div class="lp-testimonial-author">
+                    <div class="lp-avatar-circle">{{ nom[0] }}</div>
+                    <div>
+                        <div style="font-weight:700;font-size:13px;">{{ nom }}</div>
+                        <div style="font-size:11.5px;color:var(--lp-text-muted);">{{ role }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="lp-section lp-section-alt" id="faq">
+    <div class="lp-container" style="max-width:760px;">
+        <div class="lp-section-head">
+            <h2>{{ t('landing.faq_title') }}</h2>
+        </div>
+        {% for question, reponse in faq %}
+        <div class="lp-faq-item">
+            <div class="lp-faq-question" onclick="this.parentElement.classList.toggle('open')">
+                {{ question }} <span>+</span>
+            </div>
+            <div class="lp-faq-answer">{{ reponse }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="lp-section" id="contact">
+    <div class="lp-container">
+        <div class="lp-section-head">
+            <h2>{{ t('landing.contact_title') }}</h2>
+        </div>
+        <div class="lp-contact-grid">
+            <div>
+                <div class="lp-contact-item"><span class="lp-contact-icon">📞</span> {{ content.contact_telephone }}</div>
+                <div class="lp-contact-item"><span class="lp-contact-icon">📧</span> {{ content.contact_email }}</div>
+                <div class="lp-contact-item"><span class="lp-contact-icon">📍</span> {{ content.contact_adresse }}</div>
+                <div class="lp-social-row">
+                    {% if content.contact_facebook %}<a href="{{ content.contact_facebook }}" target="_blank">📘</a>{% endif %}
+                    {% if content.contact_instagram %}<a href="{{ content.contact_instagram }}" target="_blank">📷</a>{% endif %}
+                    {% if content.contact_linkedin %}<a href="{{ content.contact_linkedin }}" target="_blank">💼</a>{% endif %}
+                    {% if content.contact_whatsapp %}<a href="{{ content.contact_whatsapp }}" target="_blank">💬</a>{% endif %}
+                </div>
+            </div>
+            <form method="POST" action="{{ url_for('site.contact_submit') }}">
+                <div class="lp-form-group"><input class="lp-form-control" name="nom" placeholder="Votre nom" required></div>
+                <div class="lp-form-group"><input class="lp-form-control" type="email" name="email" placeholder="Votre e-mail" required></div>
+                <div class="lp-form-group"><textarea class="lp-form-control" name="message" rows="4" placeholder="Votre message" required></textarea></div>
+                <button type="submit" class="lp-btn lp-btn-primary" style="width:100%;justify-content:center;">Envoyer le message</button>
+            </form>
+        </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+            <p style="text-align:center;margin-top:16px;color:{{ 'var(--lp-accent)' if category == 'success' else '#B4453C' }};font-weight:600;">{{ message }}</p>
+            {% endfor %}
+        {% endwith %}
+    </div>
+</section>
+
+<footer class="lp-footer">
+    <div class="lp-container">
+        <div class="lp-footer-grid">
+            <div>
+                <h4>🩺 {{ app_name }}</h4>
+                <p style="font-size:13px;color:#A9B8BF;line-height:1.6;">{{ content.footer_texte }}</p>
+            </div>
+            <div>
+                <h4>Produit</h4>
+                <a href="#fonctionnalites">{{ t('landing.nav_features') }}</a>
+                <a href="#tarifs">{{ t('landing.nav_pricing') }}</a>
+                <a href="#faq">{{ t('landing.nav_faq') }}</a>
+            </div>
+            <div>
+                <h4>Compte</h4>
+                <a href="{{ url_for('auth.login') }}">{{ t('landing.nav_login') }}</a>
+                <a href="{{ url_for('auth.register') }}">{{ t('landing.nav_start') }}</a>
+            </div>
+            <div>
+                <h4>Légal</h4>
+                <a href="{{ url_for('site.landing') }}#contact">{{ t('landing.nav_contact') }}</a>
+                <a href="{{ url_for('site.terms') }}">Conditions d'utilisation</a>
+                <a href="{{ url_for('site.privacy') }}">Politique de confidentialité</a>
+            </div>
+        </div>
+        <div class="lp-footer-bottom">🇩🇿 Conçu et développé en Algérie, pour les médecins algériens. © {{ 2026 }} {{ app_name }}. {{ t('landing.footer_rights') }}</div>
+    </div>
+</footer>
+
+<script>
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const btn = document.getElementById('pwa-install-btn');
+    btn.style.display = 'inline-flex';
+    btn.addEventListener('click', async () => {
+        btn.style.display = 'none';
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+    });
+});
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register("{{ url_for('site.service_worker') }}").catch(() => {});
+    });
+}
+
+/* Bascule Mensuel / Annuel — met en avant la carte correspondante */
+(function () {
+    var toggleWrap = document.getElementById('billing-toggle');
+    var toggleSwitch = document.getElementById('toggle-switch');
+    if (!toggleWrap) return;
+    var options = toggleWrap.querySelectorAll('.lp-toggle-option');
+    var cards = document.querySelectorAll('.lp-price-card[data-plan]');
+
+    function setPlan(plan) {
+        options.forEach(function (o) { o.classList.toggle('active', o.dataset.plan === plan); });
+        toggleSwitch.classList.toggle('on', plan === 'annuel');
+        cards.forEach(function (c) {
+            c.classList.remove('lp-pulse');
+            if (c.dataset.plan === plan) {
+                void c.offsetWidth; /* relance l'animation */
+                c.classList.add('lp-pulse');
+            }
+        });
+    }
+
+    options.forEach(function (btn) {
+        btn.addEventListener('click', function () { setPlan(btn.dataset.plan); });
+    });
+    toggleSwitch.addEventListener('click', function () {
+        var current = toggleWrap.querySelector('.lp-toggle-option.active').dataset.plan;
+        setPlan(current === 'mensuel' ? 'annuel' : 'mensuel');
+    });
+})();
+</script>
+</body>
+</html>

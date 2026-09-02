@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="{{ session.get('super_admin_theme', 'dark') }}">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>{% block title %}Super Admin{% endblock %} — {{ app_name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<link rel="icon" href="{{ url_for('documents.serve_upload', filename=site_logo.split('/')[-1]) if site_logo else url_for('static', filename='icons/icon-192.png') }}">
+</head>
+<body>
+<div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}
+    {% endwith %}
+</div>
+<div class="app-shell">
+    <aside class="sidebar">
+        <div class="sidebar-brand"><span class="logo-mark">⚙️</span> Super Admin</div>
+        <nav class="sidebar-nav">
+            <a class="nav-item {{ 'active' if request.endpoint == 'super_admin.dashboard' }}" href="{{ url_for('super_admin.dashboard') }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+                Tableau de bord
+            </a>
+            <a class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('super_admin.clinic') }}" href="{{ url_for('super_admin.clinics_list') }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M9 13h1M14 9h1M14 13h1M9 21v-4h6v4"/></svg>
+                Cliniques
+            </a>
+            <a class="nav-item {{ 'active' if request.endpoint == 'super_admin.payments' or request.endpoint == 'super_admin.clinic_payments' }}" href="{{ url_for('super_admin.payments') }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>
+                Paiements
+            </a>
+            <a class="nav-item {{ 'active' if request.endpoint == 'super_admin.announcements' }}" href="{{ url_for('super_admin.announcements') }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a2 2 0 1 1-3.2 2.4"/></svg>
+                Annonces globales
+            </a>
+            <a class="nav-item {{ 'active' if request.endpoint == 'super_admin.site_content' }}" href="{{ url_for('super_admin.site_content') }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg>
+                Site public
+            </a>
+            <a class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('super_admin.ads') }}" href="{{ url_for('super_admin.ads_list') }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                Publicités
+            </a>
+            <a class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('super_admin.support') }}" href="{{ url_for('super_admin.support_inbox') }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Support / Messages
+            </a>
+            <a class="nav-item {{ 'active' if request.endpoint == 'super_admin.software' }}" href="{{ url_for('super_admin.software') }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Gestion logicielle
+            </a>
+            <a class="nav-item {{ 'active' if request.endpoint == 'super_admin.logs' }}" href="{{ url_for('super_admin.logs') }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg>
+                Journaux
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <a class="user-chip" href="{{ url_for('super_admin.logout') }}">
+                <span class="avatar">{{ (session.get('super_admin_nom') or 'A')[0]|upper }}</span>
+                <span class="user-chip-info">
+                    <div class="user-chip-name">{{ session.get('super_admin_nom') }}</div>
+                    <div class="user-chip-role">Déconnexion</div>
+                </span>
+            </a>
+        </div>
+    </aside>
+    <div class="main-area">
+        <header class="topbar">
+            <div class="page-subtitle" style="font-weight:700;">Panneau d'administration logicielle — accès restreint</div>
+            <div class="theme-switcher" style="margin-left:auto;" title="Changer de thème">
+                <span class="theme-dot sa-theme-dot" data-theme="light" style="background:#F4F7FB;border:1px solid #E5EAF1;"></span>
+                <span class="theme-dot sa-theme-dot" data-theme="dark" style="background:#0B1120;"></span>
+            </div>
+        </header>
+        <main class="content">{% block content %}{% endblock %}</main>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var current = "{{ session.get('super_admin_theme', 'dark') }}";
+    document.querySelectorAll(".sa-theme-dot").forEach(function(el) {
+        el.classList.toggle("active", el.dataset.theme === current);
+        el.addEventListener("click", function() {
+            var theme = el.dataset.theme;
+            document.documentElement.setAttribute("data-theme", theme);
+            document.querySelectorAll(".sa-theme-dot").forEach(function(d) { d.classList.toggle("active", d.dataset.theme === theme); });
+            fetch("{{ url_for('super_admin.change_theme') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ theme: theme, csrf_token: getCsrfToken() }),
+            }).catch(() => {});
+        });
+    });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}Salle d'attente{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Salle d'attente</div>
+        <div class="page-subtitle">Gérez la file d'attente en temps réel</div>
+    </div>
+    <div class="flex gap-2">
+        <div class="taille-btn" style="display:none;"></div>
+                <button class="btn btn-primary" onclick="openModal('modal-walkin')">+ Patient sans RDV</button>
+        <a href="#" onclick="openModal('modal-nb-tickets'); return false;" class="btn btn-secondary">🖨️ Imprimer les tickets</a>
+        <a href="{{ url_for('waiting_room.tv_display', clinic_id=current_clinic.id) }}" target="_blank" class="btn btn-secondary">
+            Ouvrir l'écran TV ↗
+        </a>
+    </div>
+</div>
+
+<div class="grid grid-2" style="align-items:start;">
+    <div class="card">
+        <div class="card-header"><div class="card-title">Rendez-vous du jour</div></div>
+        {% if rdvs_aujourdhui %}
+        <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr><th>Heure</th><th>Patient</th><th>Statut</th><th></th></tr></thead>
+            <tbody>
+            {% for r in rdvs_aujourdhui %}
+                <tr>
+                    <td>{{ r.heure_rdv }}</td>
+                    <td>{{ r.prenom }} {{ r.nom }}</td>
+                    <td><span class="badge badge-primary">{{ statut_rdv_labels.get(r.statut, r.statut) }}</span></td>
+                    <td>
+                        {% if r.statut not in ['en_attente', 'en_consultation', 'termine'] %}
+                        <form method="POST" action="{{ url_for('waiting_room.patient_arrived', rdv_id=r.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-primary btn-sm" type="submit">Patient arrivé</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <div class="empty-state"><p>Aucun rendez-vous aujourd'hui.</p></div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header"><div class="card-title">File d'attente</div></div>
+
+        {% if en_consultation %}
+        <div class="card" style="background:var(--primary-light);border-color:var(--primary);margin-bottom:14px;">
+            <div class="text-muted" style="font-size:11.5px;">EN CONSULTATION — SALLE {{ en_consultation.salle }}</div>
+            <div style="font-size:20px;font-weight:800;color:var(--primary-dark);">Ticket n°{{ en_consultation.numero_ticket }} — {{ en_consultation.prenom }} {{ en_consultation.nom }}</div>
+            <a href="/patients/{{ en_consultation.patient_id }}?consultation=1" class="btn btn-primary btn-sm" style="margin-top:10px;">⚡ Consultation Express</a>
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('waiting_room.call_next') }}" class="flex gap-2" style="margin-bottom:16px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select class="form-control" name="salle" style="max-width:140px;">
+                <option value="1">Salle 1</option>
+                <option value="2">Salle 2</option>
+                <option value="3">Salle 3</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Appeler le patient suivant →</button>
+        </form>
+
+        {% if file_attente %}
+        <div style="display:flex;flex-direction:column;gap:8px;">
+            {% for f in file_attente %}
+            <div class="flex justify-between items-center" style="padding:10px 12px;border-radius:var(--radius-sm);background:var(--bg-surface-alt);">
+                <div class="flex items-center gap-3">
+                    <span class="badge badge-primary" style="font-size:13px;">#{{ f.numero_ticket }}</span>
+                    <span style="font-weight:600;font-size:13px;">{{ f.prenom }} {{ f.nom }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="badge {{ 'badge-warning' if f.statut == 'en_attente' else 'badge-success' }}">{{ 'En attente' if f.statut == 'en_attente' else 'En consultation' }}</span>
+                    <button class="btn btn-ghost btn-sm" onclick="openPaiementModal({{ f.patient_id }}, {{ f.rendez_vous_id or 'null' }}, '{{ f.prenom }} {{ f.nom }}', {{ f.id }})">💳 Paiement</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding:30px 10px;"><p>Aucun patient en attente.</p></div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-walkin">
+    <div class="modal-box">
+        <div class="modal-header"><div class="card-title">Patient sans rendez-vous</div><button class="icon-btn" onclick="closeModal('modal-walkin')">✕</button></div>
+        <form method="POST" action="{{ url_for('waiting_room.walk_in_registration') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="tabs" style="margin-bottom:14px;">
+                <div class="tab-link active" id="wi-tab-existant" onclick="setWiMode('existant')">Patient existant</div>
+                <div class="tab-link" id="wi-tab-nouveau" onclick="setWiMode('nouveau')">Nouveau patient</div>
+            </div>
+            <input type="hidden" name="mode_patient" id="wi-mode" value="existant">
+            <div id="wi-panel-existant">
+                <div class="form-group">
+                    <label class="form-label">Patient</label>
+                    <select class="form-control" name="patient_id">
+                        <option value="">Sélectionner un patient</option>
+                        {% for p in patients %}<option value="{{ p.id }}">{{ p.prenom }} {{ p.nom }} {% if p.telephone %}— {{ p.telephone }}{% endif %}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div id="wi-panel-nouveau" style="display:none;">
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Prénom</label><input class="form-control" name="nouveau_prenom"></div>
+                    <div class="form-group"><label class="form-label">Nom</label><input class="form-control" name="nouveau_nom"></div>
+                </div>
+                <div class="form-group"><label class="form-label">Téléphone</label><input class="form-control" name="nouveau_telephone"></div>
+            </div>
+            <p class="text-muted" style="font-size:11.5px;">Le patient sera automatiquement ajouté à la file d'attente d'aujourd'hui avec un numéro de ticket.</p>
+            <button type="submit" class="btn btn-primary btn-block">Enregistrer et ajouter à la file</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-nb-tickets">
+    <div class="modal-box">
+        <div class="modal-header"><div class="card-title">Imprimer des tickets d'attente</div><button class="icon-btn" onclick="closeModal('modal-nb-tickets')">✕</button></div>
+        <p class="text-muted" style="font-size:13px;margin-bottom:16px;">Imprimez à l'avance une planche de tickets numérotés, à découper aux ciseaux et à distribuer aux patients au fur et à mesure.</p>
+        <div class="form-group">
+            <label class="form-label">Nombre de tickets</label>
+            <input class="form-control" type="number" id="nb-tickets-input" value="12" min="1" max="60">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Format papier</label>
+            <select class="form-control" id="taille-tickets-select">
+                <option value="A4">A4</option>
+                <option value="A5">A5</option>
+            </select>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="imprimerTickets()">Générer les tickets</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-paiement">
+    <div class="modal-box">
+        <div class="modal-header"><div class="card-title">Paiement de consultation</div><button class="icon-btn" onclick="closeModal('modal-paiement')">✕</button></div>
+        <p class="text-muted" style="font-size:13px;margin-bottom:14px;" id="paiement-patient-nom"></p>
+        <form method="POST" action="{{ url_for('waiting_room.quick_payment') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="patient_id" id="paiement-patient-id">
+            <input type="hidden" name="rendez_vous_id" id="paiement-rdv-id">
+            <input type="hidden" name="file_attente_id" id="paiement-file-attente-id">
+            <div class="form-group"><label class="form-label">Montant de la consultation</label><input class="form-control" type="number" step="0.01" name="montant" required></div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Statut</label>
+                    <select class="form-control" name="statut">
+                        <option value="paye">Payé</option>
+                        <option value="impaye">Impayé</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Méthode</label>
+                    <select class="form-control" name="methode_paiement">
+                        <option value="especes">Espèces</option>
+                        <option value="carte">Carte bancaire</option>
+                        <option value="virement">Virement</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group"><label class="form-label">Notes</label><input class="form-control" name="notes"></div>
+            <button type="submit" class="btn btn-primary btn-block">Enregistrer le paiement</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function setWiMode(mode) {
+    document.getElementById('wi-mode').value = mode;
+    document.getElementById('wi-panel-existant').style.display = mode === 'existant' ? 'block' : 'none';
+    document.getElementById('wi-panel-nouveau').style.display = mode === 'nouveau' ? 'block' : 'none';
+    document.getElementById('wi-tab-existant').classList.toggle('active', mode === 'existant');
+    document.getElementById('wi-tab-nouveau').classList.toggle('active', mode === 'nouveau');
+}
+function imprimerTickets() {
+    const nb = document.getElementById('nb-tickets-input').value || 12;
+    const taille = document.getElementById('taille-tickets-select').value;
+    window.open("{{ url_for('waiting_room.print_tickets') }}?nombre=" + nb + "&taille=" + taille, "_blank");
+    closeModal('modal-nb-tickets');
+}
+function openPaiementModal(patientId, rdvId, nom, fileAttenteId) {
+    document.getElementById('paiement-patient-id').value = patientId;
+    document.getElementById('paiement-rdv-id').value = rdvId || '';
+    document.getElementById('paiement-file-attente-id').value = fileAttenteId || '';
+    document.getElementById('paiement-patient-nom').textContent = 'Patient : ' + nom;
+    openModal('modal-paiement');
+}
+{% if paiement_a_saisir %}
+document.addEventListener('DOMContentLoaded', () => {
+    openPaiementModal({{ paiement_a_saisir.patient_id }}, {{ paiement_a_saisir.rendez_vous_id or 'null' }},
+        {{ (paiement_a_saisir.prenom + ' ' + paiement_a_saisir.nom)|tojson }}, {{ paiement_a_saisir.id }});
+});
+{% endif %}
+</script>
+{% endblock %}

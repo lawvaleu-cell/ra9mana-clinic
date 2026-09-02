@@ -1,0 +1,46 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Tableau de bord{% endblock %}
+{% block content %}
+<div class="page-header"><div class="page-title">Analytique globale de la plateforme</div></div>
+
+<div class="grid grid-4" style="margin-bottom:20px;">
+    <div class="stat-card"><div class="stat-label">Total cliniques</div><div class="stat-value">{{ total_clinics }}</div></div>
+    <div class="stat-card"><div class="stat-label">Cliniques actives</div><div class="stat-value" style="color:var(--accent);">{{ actives }}</div></div>
+    <div class="stat-card"><div class="stat-label">En essai gratuit</div><div class="stat-value" style="color:var(--warning);">{{ essai }}</div></div>
+    <div class="stat-card"><div class="stat-label">Suspendues</div><div class="stat-value" style="color:var(--danger);">{{ suspendues }}</div></div>
+</div>
+<div class="grid grid-3" style="margin-bottom:20px;">
+    <div class="stat-card"><div class="stat-label">Total médecins</div><div class="stat-value" style="font-size:20px;">{{ total_medecins }}</div></div>
+    <div class="stat-card"><div class="stat-label">Total patients (plateforme)</div><div class="stat-value" style="font-size:20px;">{{ total_patients }}</div></div>
+    <div class="stat-card"><div class="stat-label">Nouvelles cliniques ce mois</div><div class="stat-value" style="font-size:20px;">{{ nouvelles_ce_mois }}</div></div>
+</div>
+
+<div class="grid grid-2" style="align-items:start;">
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Cliniques les plus actives</div>
+        {% for c in plus_actives %}
+        <a href="{{ url_for('super_admin.clinic_detail', clinic_id=c.id) }}" class="flex justify-between" style="padding:9px 0;border-bottom:1px solid var(--border);">
+            <span>{{ c.nom_clinique }}</span><strong>{{ c.nb_patients }} patients</strong>
+        </a>
+        {% endfor %}
+    </div>
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Croissance des inscriptions (6 derniers mois)</div>
+        <canvas id="chartCroissance" height="180"></canvas>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const styles = getComputedStyle(document.documentElement);
+new Chart(document.getElementById('chartCroissance'), {
+    type: 'bar',
+    data: {
+        labels: {{ croissance|map(attribute='mois')|list|tojson }},
+        datasets: [{ label: 'Nouvelles cliniques', data: {{ croissance|map(attribute='count')|list|tojson }},
+            backgroundColor: styles.getPropertyValue('--primary').trim(), borderRadius: 6 }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+});
+</script>
+{% endblock %}

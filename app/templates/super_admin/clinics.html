@@ -1,0 +1,31 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Cliniques{% endblock %}
+{% block content %}
+<div class="page-header"><div class="page-title">Cliniques clientes</div></div>
+<div class="card" style="margin-bottom:18px;">
+    <form method="GET" class="flex gap-2">
+        <input class="form-control" name="q" value="{{ q }}" placeholder="Rechercher une clinique, un médecin, un e-mail…">
+        <button class="btn btn-secondary" type="submit">Rechercher</button>
+    </form>
+</div>
+<div class="card">
+    <div class="table-wrap">
+    <table class="data-table">
+        <thead><tr><th>Clinique</th><th>Médecin</th><th>E-mail</th><th>Plan</th><th>Statut</th><th>Créée le</th><th></th></tr></thead>
+        <tbody>
+        {% for c in cliniques %}
+            <tr onclick="window.location='{{ url_for('super_admin.clinic_detail', clinic_id=c.id) }}'" style="cursor:pointer;">
+                <td style="font-weight:600;">{{ c.nom_clinique }}</td>
+                <td>{{ c.nom_medecin }}</td>
+                <td class="text-muted">{{ c.email }}</td>
+                <td><span class="badge badge-neutral">{{ c.plan }}</span></td>
+                <td><span class="badge badge-{{ 'success' if c.statut == 'actif' else ('warning' if c.statut == 'essai' else 'danger') }}">{{ c.statut }}</span></td>
+                <td class="text-muted">{{ c.date_creation|date_fr }}</td>
+                <td><a href="{{ url_for('super_admin.clinic_detail', clinic_id=c.id) }}" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();">Gérer →</a></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

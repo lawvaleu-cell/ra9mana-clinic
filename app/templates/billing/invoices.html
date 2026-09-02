@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Factures{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Facturation</div>
+        <div class="page-subtitle">Gestion des factures patients</div>
+    </div>
+    <button class="btn btn-primary" onclick="openModal('modal-nouvelle-facture')">+ Nouvelle facture</button>
+</div>
+
+<div class="modal-overlay" id="modal-nouvelle-facture">
+    <div class="modal-box">
+        <div class="modal-header"><div class="card-title">Nouvelle facture</div><button class="icon-btn" onclick="closeModal('modal-nouvelle-facture')">✕</button></div>
+        <div class="form-group">
+            <label class="form-label">Patient <span class="required">*</span></label>
+            <select class="form-control" id="select-patient-facture">
+                <option value="">Sélectionner un patient</option>
+                {% for p in patients %}<option value="{{ p.id }}">{{ p.prenom }} {{ p.nom }} {% if p.telephone %}— {{ p.telephone }}{% endif %}</option>{% endfor %}
+            </select>
+            <div class="form-hint">Vous pourrez ensuite ajouter librement les lignes, montants et détails de la facture.</div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="creerFactureLibre()">Continuer</button>
+    </div>
+</div>
+<script>
+function creerFactureLibre() {
+    const id = document.getElementById('select-patient-facture').value;
+    if (!id) { alert('Veuillez sélectionner un patient.'); return; }
+    window.location = '/facturation/nouvelle/' + id;
+}
+</script>
+
+<div class="card" style="margin-bottom:18px;">
+    <div class="tabs" style="border:none;margin:0;">
+        <a class="tab-link {{ 'active' if not statut }}" href="{{ url_for('billing.list_invoices') }}">Toutes</a>
+        <a class="tab-link {{ 'active' if statut == 'impaye' }}" href="{{ url_for('billing.list_invoices', statut='impaye') }}">Impayées</a>
+        <a class="tab-link {{ 'active' if statut == 'partiel' }}" href="{{ url_for('billing.list_invoices', statut='partiel') }}">Partielles</a>
+        <a class="tab-link {{ 'active' if statut == 'paye' }}" href="{{ url_for('billing.list_invoices', statut='paye') }}">Payées</a>
+    </div>
+</div>
+
+<div class="card">
+    {% if factures %}
+    <div class="table-wrap">
+    <table class="data-table">
+        <thead><tr><th>N° Facture</th><th>Patient</th><th>Date</th><th>Total</th><th>Payé</th><th>Statut</th><th></th></tr></thead>
+        <tbody>
+        {% for f in factures %}
+            <tr onclick="window.location='{{ url_for('billing.view_invoice', facture_id=f.id) }}'" style="cursor:pointer;">
+                <td style="font-weight:600;">{{ f.numero_facture }}</td>
+                <td>{{ f.prenom }} {{ f.nom }}</td>
+                <td class="text-muted">{{ f.date_facture|date_fr }}</td>
+                <td>{{ f.montant_total|money }}</td>
+                <td>{{ f.montant_paye|money }}</td>
+                <td><span class="badge badge-{{ 'success' if f.statut == 'paye' else ('warning' if f.statut == 'partiel' else 'danger') }}">{{ f.statut }}</span></td>
+                <td><a href="{{ url_for('billing.view_invoice', facture_id=f.id) }}" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();">Voir →</a></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><p>Aucune facture pour l'instant.</p></div>
+    {% endif %}
+</div>
+{% endblock %}

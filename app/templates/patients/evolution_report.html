@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Rapports d'évolution — {{ patient.prenom }} {{ patient.nom }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Rapports d'évolution médicale</div>
+        <div class="page-subtitle">{{ patient.prenom }} {{ patient.nom }} — {{ consultations|length }} mesure(s) sur la période</div>
+    </div>
+    <div class="flex gap-2">
+        <a href="{{ url_for('patients.view_patient', patient_id=patient.id) }}" class="btn btn-secondary btn-sm">← Dossier patient</a>
+        <button class="btn btn-secondary btn-sm no-print" onclick="window.print()">🖨️ Imprimer</button>
+        <a href="{{ url_for('patients.evolution_report_pdf', patient_id=patient.id, periode=periode) }}" class="btn btn-primary btn-sm">⬇ Télécharger PDF</a>
+    </div>
+</div>
+
+<div class="card no-print" style="margin-bottom:18px;">
+    <div class="tabs" style="border:none;margin:0;">
+        <a class="tab-link {{ 'active' if periode == 'semaine' }}" href="{{ url_for('patients.evolution_report', patient_id=patient.id, periode='semaine') }}">Dernière semaine</a>
+        <a class="tab-link {{ 'active' if periode == 'mois' }}" href="{{ url_for('patients.evolution_report', patient_id=patient.id, periode='mois') }}">Dernier mois</a>
+        <a class="tab-link {{ 'active' if periode == 'annee' }}" href="{{ url_for('patients.evolution_report', patient_id=patient.id, periode='annee') }}">Dernière année</a>
+    </div>
+</div>
+
+{% if consultations %}
+<div class="grid grid-2" style="margin-bottom:20px;">
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Poids (kg) & IMC</div>
+        <canvas id="chartPoids" height="160"></canvas>
+    </div>
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Tension artérielle</div>
+        <canvas id="chartTension" height="160"></canvas>
+    </div>
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Température & Fréquence cardiaque</div>
+        <canvas id="chartVitaux" height="160"></canvas>
+    </div>
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Saturation O₂ & Glycémie</div>
+        <canvas id="chartAutres" height="160"></canvas>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title" style="margin-bottom:14px;">Détail des mesures</div>
+    <div class="table-wrap">
+    <table class="data-table">
+        <thead><tr><th>Date</th><th>Poids</th><th>Tension</th><th>Temp.</th><th>FC</th><th>SpO₂</th><th>Glycémie</th></tr></thead>
+        <tbody>
+        {% for c in consultations|reverse %}
+            <tr>
+                <td>{{ c.date_consultation|date_fr }}</td>
+                <td>{{ c.poids or '—' }}</td>
+                <td>{{ c.tension or '—' }}</td>
+                <td>{{ c.temperature or '—' }}</td>
+                <td>{{ c.frequence_cardiaque or '—' }}</td>
+                <td>{{ c.saturation_oxygene or '—' }}</td>
+                <td>{{ c.glycemie or '—' }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const labels = {{ series.labels|tojson }};
+const styles = getComputedStyle(document.documentElement);
+const primary = styles.getPropertyValue('--primary').trim();
+const accent = styles.getPropertyValue('--accent').trim();
+const danger = styles.getPropertyValue('--danger').trim();
+const warning = styles.getPropertyValue('--warning').trim();
+
+function makeChart(id, datasets) {
+    new Chart(document.getElementById(id), {
+        type: 'line',
+        data: { labels: labels, datasets: datasets },
+        options: { spanGaps: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: false } } }
+    });
+}
+makeChart('chartPoids', [
+    { label: 'Poids (kg)', data: {{ series.poids|tojson }}, borderColor: primary, backgroundColor: primary, tension: .3 },
+    { label: 'IMC', data: {{ series.imc|tojson }}, borderColor: accent, backgroundColor: accent, tension: .3 },
+]);
+makeChart('chartTension', [
+    { label: 'Systolique', data: {{ series.tension_sys|tojson }}, borderColor: danger, backgroundColor: danger, tension: .3 },
+    { label: 'Diastolique', data: {{ series.tension_dia|tojson }}, borderColor: warning, backgroundColor: warning, tension: .3 },
+]);
+makeChart('chartVitaux', [
+    { label: 'Température (°C)', data: {{ series.temperature|tojson }}, borderColor: warning, backgroundColor: warning, tension: .3 },
+    { label: 'Fréq. cardiaque (bpm)', data: {{ series.frequence_cardiaque|tojson }}, borderColor: danger, backgroundColor: danger, tension: .3 },
+]);
+makeChart('chartAutres', [
+    { label: 'SpO₂ (%)', data: {{ series.saturation_oxygene|tojson }}, borderColor: accent, backgroundColor: accent, tension: .3 },
+    { label: 'Glycémie (g/l)', data: {{ series.glycemie|tojson }}, borderColor: primary, backgroundColor: primary, tension: .3 },
+]);
+</script>
+{% else %}
+<div class="card empty-state"><p>Aucune mesure enregistrée sur cette période. Ajoutez des consultations avec signes vitaux pour générer des graphiques d'évolution.</p></div>
+{% endif %}
+{% endblock %}

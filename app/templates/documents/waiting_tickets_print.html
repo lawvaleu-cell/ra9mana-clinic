@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tickets d'attente — {{ clinic.nom_clinique }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/print.css') }}">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;600&display=swap');
+.tickets-grid { display: grid; grid-template-columns: repeat({{ 3 if taille == 'A4' else 2 }}, 1fr); gap: 8mm; padding: 10mm; }
+.ticket-card { border: 1.5px dashed #CBD5E1; border-radius: 14px; padding: 14px 12px; text-align: center; page-break-inside: avoid; background: linear-gradient(160deg, #FAFBFF, #F3F6FC); }
+.ticket-clinic { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 12.5px; color: #1D4ED8; }
+.ticket-doctor { font-size: 9.5px; color: #64748B; margin-top: 2px; }
+.ticket-number-label { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: #94A3B8; margin-top: 10px; }
+.ticket-number { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 40px; font-weight: 800; color: #0F172A; line-height: 1.1; }
+.ticket-meta { font-size: 9px; color: #94A3B8; margin-top: 8px; }
+.ticket-qr { margin-top: 6px; display: flex; justify-content: center; }
+@media print { .no-print { display: none !important; } @page { margin: 6mm; } }
+</style>
+</head>
+<body>
+<div class="doc-toolbar no-print" style="max-width:900px;margin:16px auto;display:flex;justify-content:space-between;">
+    <a href="{{ url_for('waiting_room.manage') }}" class="btn btn-secondary btn-sm">← Retour</a>
+    <button class="btn btn-primary btn-sm" onclick="window.print()">🖨️ Imprimer</button>
+</div>
+
+<div class="tickets-grid">
+    {% for n in numeros %}
+    <div class="ticket-card">
+        <div class="ticket-clinic">{{ clinic.nom_clinique }}</div>
+        <div class="ticket-doctor">{{ clinic.nom_medecin }}{% if clinic.telephone %} • {{ clinic.telephone }}{% endif %}</div>
+        <div class="ticket-number-label">Numéro de passage</div>
+        <div class="ticket-number">{{ n }}</div>
+        <div class="ticket-meta" id="date-{{ n }}"></div>
+        <div class="ticket-meta" id="meteo-{{ n }}"></div>
+        <div class="ticket-qr" id="qr-{{ n }}"></div>
+    </div>
+    {% endfor %}
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const now = new Date();
+const dateStr = now.toLocaleDateString('fr-FR');
+const numeros = {{ numeros|tojson }};
+numeros.forEach(n => {
+    document.getElementById('date-' + n).textContent = dateStr;
+    try { new QRCode(document.getElementById('qr-' + n), { text: "TICKET-{{ clinic.id }}-" + n + "-" + dateStr, width: 46, height: 46 }); } catch(e) {}
+});
+
+// Météo du jour (best-effort, nécessite une connexion internet côté navigateur)
+{% if clinic.adresse %}
+fetch("https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent("{{ clinic.adresse.split(',')[-1].strip() if clinic.adresse else '' }}") + "&count=1&language=fr")
+    .then(r => r.json())
+    .then(geo => {
+        if (!geo.results || !geo.results.length) return;
+        const { latitude, longitude } = geo.results[0];
+        return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max&timezone=auto`)
+            .then(r => r.json())
+            .then(data => {
+                const maxTemp = data.daily && data.daily.temperature_2m_max ? Math.round(data.daily.temperature_2m_max[0]) : null;
+                if (maxTemp === null) return;
+                numeros.forEach(n => {
+                    const el = document.getElementById('meteo-' + n);
+                    if (el) el.textContent = `☀️ Max du jour : ${maxTemp}°C`;
+                });
+            });
+    }).catch(() => {});
+{% endif %}
+</script>
+</body>
+</html>

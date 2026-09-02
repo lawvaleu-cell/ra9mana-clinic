@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Rendez-vous{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">Rendez-vous</div>
+        <div class="page-subtitle">Gérez votre planning de consultations</div>
+    </div>
+    <button class="btn btn-primary" onclick="openModal('modal-nouveau-rdv')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Nouveau rendez-vous
+    </button>
+</div>
+
+<div class="card" style="margin-bottom:18px;">
+    <div class="flex justify-between items-center" style="flex-wrap:wrap;gap:12px;">
+        <div class="tabs" style="border:none;margin:0;">
+            <a class="tab-link {{ 'active' if vue == 'jour' }}" href="{{ url_for('appointments.calendar_view', vue='jour', date=ref_date.isoformat()) }}">Jour</a>
+            <a class="tab-link {{ 'active' if vue == 'semaine' }}" href="{{ url_for('appointments.calendar_view', vue='semaine', date=ref_date.isoformat()) }}">Semaine</a>
+            <a class="tab-link {{ 'active' if vue == 'mois' }}" href="{{ url_for('appointments.calendar_view', vue='mois', date=ref_date.isoformat()) }}">Mois</a>
+        </div>
+        <div class="flex items-center gap-2">
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('appointments.calendar_view', vue=vue, date=prev_date) }}">←</a>
+            <strong style="font-size:13.5px;">{{ debut|date_fr }} — {{ fin|date_fr }}</strong>
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('appointments.calendar_view', vue=vue, date=next_date) }}">→</a>
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('appointments.calendar_view', vue='semaine') }}">Aujourd'hui</a>
+        </div>
+    </div>
+</div>
+
+{% set jours_semaine = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'] %}
+
+<div class="grid" style="grid-template-columns: repeat({{ 7 if vue != 'jour' else 1 }}, 1fr); gap:14px;" id="calendar-grid">
+{% for jour in jours %}
+    <div class="card day-column" data-date="{{ jour.isoformat() }}" style="min-height:220px;padding:14px;">
+        <div class="flex justify-between items-center" style="margin-bottom:10px;">
+            <strong style="font-size:12.5px;">{{ jours_semaine[jour.weekday()] }} {{ jour.day }}</strong>
+            {% if jour == today %}<span class="badge badge-primary">Aujourd'hui</span>{% endif %}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+        {% for r in rdvs if r.date_rdv|string == jour.isoformat() %}
+            <div class="rdv-card" draggable="true" data-id="{{ r.id }}"
+                 style="border-radius:var(--radius-sm);padding:8px 10px;background:{{ r.couleur }}18;border-left:3px solid {{ r.couleur }};cursor:grab;"
+                 onclick="openRdvDetail({{ r.id }}, '{{ r.prenom }} {{ r.nom }}', '{{ r.heure_rdv }}', '{{ r.motif or '' }}', '{{ r.statut }}', '{{ r.telephone or '' }}')">
+                <div style="font-size:11.5px;font-weight:700;color:{{ r.couleur }};">{{ r.heure_rdv }}</div>
+                <div style="font-size:12.8px;font-weight:600;">{{ r.prenom }} {{ r.nom }}</div>
+                <div class="text-muted" style="font-size:11px;">{{ statut_labels.get(r.statut, r.statut) }}</div>
+            </div>
+        {% else %}
+            <div class="text-muted" style="font-size:11.5px;text-align:center;padding:14px 0;">—</div>
+        {% endfor %}
+        </div>
+    </div>
+{% endfor %}
+</div>
+
+<!-- Modal : nouveau rendez-vous -->
+<div class="modal-overlay" id="modal-nouveau-rdv">
+    <div class="modal-box">
+        <div class="modal-header"><div class="card-title">Nouveau rendez-vous</div><button class="icon-btn" onclick="closeModal('modal-nouveau-rdv')">✕</button></div>
+        <form method="POST" action="{{ url_for('appointments.create_appointment') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="tabs" style="margin-bottom:16px;">
+                <div class="tab-link active" id="tab-existant" onclick="setModePatient('existant')">Patient existant</div>
+                <div class="tab-link" id="tab-nouveau" onclick="setModePatient('nouveau')">Nouveau patient</div>
+            </div>
+            <input type="hidden" name="mode_patient" id="mode_patient" value="existant">
+
+            <div id="panel-existant">
+                <div class="form-group">
+                    <label class="form-label">Patient <span class="required">*</span></label>
+                    <select class="form-control" name="patient_id" id="select-patient-existant">
+                        <option value="">Sélectionner un patient</option>
+                        {% for p in patients %}<option value="{{ p.id }}">{{ p.prenom }} {{ p.nom }} {% if p.telephone %}— {{ p.telephone }}{% endif %}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div id="panel-nouveau" style="display:none;">
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Prénom</label><input class="form-control" name="nouveau_prenom" id="input-nouveau-prenom"></div>
+                    <div class="form-group"><label class="form-label">Nom</label><input class="form-control" name="nouveau_nom" id="input-nouveau-nom"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Téléphone</label><input class="form-control" name="nouveau_telephone"></div>
+                    <div class="form-group">
+                        <label class="form-label">Sexe</label>
+                        <select class="form-control" name="nouveau_sexe">
+                            <option value="">—</option><option value="M">Masculin</option><option value="F">Féminin</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group"><label class="form-label">Date de naissance</label><input class="form-control" type="date" name="nouveau_date_naissance"></div>
+                <p class="text-muted" style="font-size:11.5px;margin-top:-6px;">Le dossier complet du patient pourra être complété plus tard.</p>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Date <span class="required">*</span></label><input class="form-control" type="date" name="date_rdv" value="{{ today.isoformat() }}" required></div>
+                <div class="form-group"><label class="form-label">Heure <span class="required">*</span></label><input class="form-control" type="time" name="heure_rdv" required></div>
+            </div>
+            <div class="form-group"><label class="form-label">Motif</label><input class="form-control" name="motif"></div>
+            <button type="submit" class="btn btn-primary btn-block">Enregistrer et planifier</button>
+        </form>
+    </div>
+
+</div>
+
+<!-- Modal : détail rendez-vous -->
+<div class="modal-overlay" id="modal-rdv-detail">
+    <div class="modal-box">
+        <div class="modal-header"><div class="card-title" id="rdv-detail-nom"></div><button class="icon-btn" onclick="closeModal('modal-rdv-detail')">✕</button></div>
+        <p style="font-size:13px;" id="rdv-detail-info"></p>
+        <div class="form-group">
+            <label class="form-label">Changer le statut</label>
+            <select class="form-control" id="rdv-detail-statut" onchange="updateRdvStatus()">
+                {% for key, label in statut_labels.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+            </select>
+        </div>
+        <form method="POST" id="rdv-delete-form" onsubmit="return confirm('Supprimer ce rendez-vous ?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger btn-block btn-sm">Supprimer le rendez-vous</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function setModePatient(mode) {
+    document.getElementById('mode_patient').value = mode;
+    document.getElementById('panel-existant').style.display = mode === 'existant' ? 'block' : 'none';
+    document.getElementById('panel-nouveau').style.display = mode === 'nouveau' ? 'block' : 'none';
+    document.getElementById('tab-existant').classList.toggle('active', mode === 'existant');
+    document.getElementById('tab-nouveau').classList.toggle('active', mode === 'nouveau');
+    document.getElementById('select-patient-existant').required = (mode === 'existant');
+    document.getElementById('input-nouveau-prenom').required = (mode === 'nouveau');
+    document.getElementById('input-nouveau-nom').required = (mode === 'nouveau');
+}
+setModePatient('existant');
+
+let currentRdvId = null;
+function openRdvDetail(id, nom, heure, motif, statut, tel) {
+    currentRdvId = id;
+    document.getElementById('rdv-detail-nom').textContent = nom;
+    document.getElementById('rdv-detail-info').textContent = `${heure} — ${motif || 'Aucun motif renseigné'} ${tel ? '• ' + tel : ''}`;
+    document.getElementById('rdv-detail-statut').value = statut;
+    document.getElementById('rdv-delete-form').action = `/rendez-vous/${id}/supprimer`;
+    openModal('modal-rdv-detail');
+}
+function updateRdvStatus() {
+    if (!currentRdvId) return;
+    const statut = document.getElementById('rdv-detail-statut').value;
+    fetch(`/rendez-vous/${currentRdvId}/statut`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statut })
+    }).then(() => location.reload());
+}
+
+// Glisser-déposer entre les jours
+document.querySelectorAll('.rdv-card').forEach(card => {
+    card.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', card.dataset.id);
+        setTimeout(() => card.style.opacity = '0.4', 0);
+    });
+    card.addEventListener('dragend', () => card.style.opacity = '1');
+});
+document.querySelectorAll('.day-column').forEach(col => {
+    col.addEventListener('dragover', e => { e.preventDefault(); col.style.background = 'var(--primary-light)'; });
+    col.addEventListener('dragleave', () => col.style.background = '');
+    col.addEventListener('drop', e => {
+        e.preventDefault();
+        col.style.background = '';
+        const id = e.dataTransfer.getData('text/plain');
+        const newDate = col.dataset.date;
+        fetch(`/rendez-vous/${id}/deplacer`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date_rdv: newDate, heure_rdv: '09:00' })
+        }).then(() => location.reload());
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Paiements — {{ clinic.nom_clinique }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Paiements — {{ clinic.nom_clinique }}</div>
+        <div class="page-subtitle">Plan actuel : {{ clinic.plan }} • Statut : {{ clinic.statut_paiement or 'en_attente' }}</div>
+    </div>
+    <a href="{{ url_for('super_admin.clinic_detail', clinic_id=clinic.id) }}" class="btn btn-secondary btn-sm">← Fiche clinique</a>
+</div>
+
+<div class="grid" style="grid-template-columns: 1fr 1.4fr; align-items:start; gap:20px;">
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Enregistrer un paiement</div>
+        <form method="POST" action="{{ url_for('super_admin.add_payment', clinic_id=clinic.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label class="form-label">Plan</label>
+                <select class="form-control" name="plan" id="plan-select" onchange="document.getElementById('montant-input').value = ({'mensuel': {{ plan_prix.mensuel }}, 'annuel': {{ plan_prix.annuel }}, 'essai_gratuit': 0})[this.value]">
+                    <option value="mensuel">Mensuel ({{ plan_prix.mensuel }})</option>
+                    <option value="annuel">Annuel ({{ plan_prix.annuel }})</option>
+                    <option value="essai_gratuit">Essai gratuit</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Montant</label><input class="form-control" type="number" step="0.01" name="montant" id="montant-input" value="{{ plan_prix.mensuel }}"></div>
+                <div class="form-group">
+                    <label class="form-label">Méthode</label>
+                    <select class="form-control" name="methode_paiement">
+                        <option value="virement">Virement bancaire</option>
+                        <option value="carte">Carte bancaire</option>
+                        <option value="especes">Espèces</option>
+                        <option value="cheque">Chèque</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">N° de facture</label><input class="form-control" name="numero_facture" placeholder="Généré automatiquement si vide"></div>
+                <div class="form-group">
+                    <label class="form-label">Statut</label>
+                    <select class="form-control" name="statut">
+                        <option value="paye">Payé</option>
+                        <option value="en_attente">En attente</option>
+                        <option value="echoue">Échoué</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group"><label class="form-label">Date de paiement</label><input class="form-control" type="date" name="date_paiement" value="{{ today }}"></div>
+            <button type="submit" class="btn btn-primary btn-block">Enregistrer le paiement</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Historique des paiements</div>
+        {% if paiements %}
+        <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr><th>Facture</th><th>Plan</th><th>Montant</th><th>Méthode</th><th>Statut</th><th>Date</th></tr></thead>
+            <tbody>
+            {% for p in paiements %}
+                <tr>
+                    <td class="text-muted">{{ p.numero_facture }}</td>
+                    <td><span class="badge badge-neutral">{{ p.plan }}</span></td>
+                    <td style="font-weight:600;">{{ p.montant }}</td>
+                    <td class="text-muted">{{ p.methode_paiement }}</td>
+                    <td><span class="badge badge-{{ 'success' if p.statut == 'paye' else ('warning' if p.statut == 'en_attente' else 'danger') }}">{{ p.statut }}</span></td>
+                    <td class="text-muted">{{ p.date_paiement }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <div class="empty-state"><p>Aucun paiement enregistré pour cette clinique.</p></div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

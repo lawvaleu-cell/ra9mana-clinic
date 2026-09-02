@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ ticket.sujet }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">{{ ticket.sujet }}</div>
+        <div class="page-subtitle">Statut : <span class="badge badge-{{ 'success' if ticket.statut == 'resolu' else ('neutral' if ticket.statut == 'archive' else 'primary') }}">{{ ticket.statut }}</span></div>
+    </div>
+    <a href="{{ url_for('support.list_tickets') }}" class="btn btn-secondary btn-sm">← Toutes les conversations</a>
+</div>
+
+<div class="card" style="max-width:760px;">
+    <div id="messages-container" style="display:flex;flex-direction:column;gap:12px;max-height:500px;overflow-y:auto;padding-right:6px;">
+        {% for m in messages %}
+        <div style="align-self:{{ 'flex-end' if m.auteur == 'clinique' else 'flex-start' }};max-width:75%;">
+            <div style="background:{{ 'var(--primary)' if m.auteur == 'clinique' else 'var(--bg-surface-alt)' }};color:{{ '#fff' if m.auteur == 'clinique' else 'var(--text-primary)' }};padding:10px 14px;border-radius:var(--radius-md);font-size:13px;">
+                {{ m.message }}
+            </div>
+            <div class="text-muted" style="font-size:10.5px;margin-top:3px;{{ 'text-align:right;' if m.auteur == 'clinique' }}">
+                {{ m.auteur_nom or ('Support RA9MANA Clinic' if m.auteur == 'admin' else 'Vous') }} — {{ m.date_creation|datetime_fr }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <form method="POST" action="{{ url_for('support.reply_ticket', ticket_id=ticket.id) }}" class="flex gap-2" style="margin-top:18px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input class="form-control" name="message" placeholder="Écrivez votre message…" required autocomplete="off">
+        <button type="submit" class="btn btn-primary">Envoyer</button>
+    </form>
+</div>
+
+<script>
+// Actualisation automatique du fil de discussion (pas de websocket dans cet environnement)
+setInterval(() => {
+    fetch("{{ url_for('support.poll_messages', ticket_id=ticket.id) }}")
+        .then(r => r.json())
+        .then(data => {
+            if (!data.ok) return;
+            const container = document.getElementById('messages-container');
+            if (data.messages.length !== {{ messages|length }}) location.reload();
+        }).catch(() => {});
+}, 8000);
+</script>
+{% endblock %}

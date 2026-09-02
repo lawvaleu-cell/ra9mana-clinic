@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Modèles d'ordonnance{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">Modèles d'ordonnance</div>
+    <a href="{{ url_for('prescriptions.create_template') }}" class="btn btn-primary">+ Nouveau modèle</a>
+</div>
+<div class="card">
+    {% if modeles %}
+    <div class="table-wrap">
+    <table class="data-table">
+        <thead><tr><th>Nom</th><th></th></tr></thead>
+        <tbody>
+        {% for m in modeles %}
+            <tr>
+                <td style="font-weight:600;">{{ m.nom }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('prescriptions.delete_template', modele_id=m.id) }}" onsubmit="return confirm('Supprimer ce modèle ?');" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn-danger btn-sm" type="submit">Suppr.</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><p>Aucun modèle. Créez des modèles pour accélérer la rédaction de vos ordonnances fréquentes (diabète, hypertension, rhume…).</p></div>
+    {% endif %}
+</div>
+{% endblock %}

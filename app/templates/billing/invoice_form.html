@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Nouvelle facture{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Nouvelle facture</div>
+        <div class="page-subtitle">Patient : {{ patient.prenom }} {{ patient.nom }}</div>
+    </div>
+</div>
+
+<form method="POST" class="card" style="max-width:800px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div id="lignes-container"></div>
+    <button type="button" class="btn btn-secondary btn-sm" onclick="addLine()" style="margin-bottom:18px;">+ Ajouter une ligne</button>
+
+    <div style="text-align:right;font-size:16px;font-weight:800;margin-bottom:18px;" id="total-display">Total : 0,00</div>
+
+    <div class="form-group">
+        <label class="form-label">Montant payé maintenant</label>
+        <input class="form-control" type="number" step="0.01" name="montant_paye" value="0" style="max-width:220px;">
+    </div>
+
+    <div class="flex gap-2">
+        <button type="submit" class="btn btn-primary">Créer la facture</button>
+        <a href="{{ url_for('patients.view_patient', patient_id=patient.id) }}" class="btn btn-secondary">Annuler</a>
+    </div>
+</form>
+
+<template id="ligne-template">
+    <div class="ligne-facture form-row" style="align-items:end;margin-bottom:12px;grid-template-columns: 2fr 1fr 1fr auto;">
+        <div class="form-group" style="margin:0;"><label class="form-label">Désignation</label><input class="form-control" name="designation[]" oninput="recalcTotal()" required></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Quantité</label><input class="form-control ligne-qte" type="number" name="quantite[]" value="1" min="1" oninput="recalcTotal()"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Prix unitaire</label><input class="form-control ligne-prix" type="number" step="0.01" name="prix[]" value="0" oninput="recalcTotal()"></div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="this.closest('.ligne-facture').remove(); recalcTotal();">✕</button>
+    </div>
+</template>
+
+<script>
+function addLine() {
+    const tpl = document.getElementById('ligne-template');
+    document.getElementById('lignes-container').appendChild(tpl.content.cloneNode(true));
+}
+function recalcTotal() {
+    let total = 0;
+    document.querySelectorAll('.ligne-facture').forEach(l => {
+        const qte = parseFloat(l.querySelector('.ligne-qte').value) || 0;
+        const prix = parseFloat(l.querySelector('.ligne-prix').value) || 0;
+        total += qte * prix;
+    });
+    document.getElementById('total-display').textContent = 'Total : ' + total.toFixed(2);
+}
+addLine();
+</script>
+{% endblock %}

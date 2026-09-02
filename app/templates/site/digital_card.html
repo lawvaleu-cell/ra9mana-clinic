@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ clinic.nom_medecin }} — {{ clinic.nom_clinique }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+<link rel="icon" href="{{ url_for('documents.serve_upload', filename=site_logo.split('/')[-1]) if site_logo else url_for('static', filename='icons/icon-192.png') }}">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap');
+body { background: linear-gradient(165deg, #0B1120, #101A34 55%, #0B1120); min-height: 100vh; padding: 40px 16px; }
+.card-wrap { max-width: 440px; margin: 0 auto; }
+.dc-card { background: linear-gradient(180deg, #FFFFFF, #FAFBFF); border-radius: 26px; box-shadow: 0 30px 70px rgba(0,0,0,0.35); overflow: hidden; border: 1px solid rgba(255,255,255,0.08); }
+.dc-cover { height: 100px; background: linear-gradient(135deg, #0B1F5C, #1D4ED8 60%, #10B981); position: relative; }
+.dc-cover::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.18), transparent 60%); }
+.dc-photo { width: 104px; height: 104px; border-radius: 50%; border: 4px solid #fff; margin: -56px auto 0; display: block; background: #EAF1FE; object-fit: cover; box-shadow: 0 8px 24px rgba(15,23,42,0.18); }
+.dc-body { padding: 18px 28px 32px; text-align: center; }
+.dc-name { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 24px; margin-top: 12px; color: #101A34; }
+.dc-specialty { color: #1D4ED8; font-weight: 700; font-size: 12.5px; margin-top: 4px; letter-spacing: .04em; text-transform: uppercase; }
+.dc-clinic { color: #5B6B82; font-size: 13.5px; margin-top: 4px; font-family: 'Playfair Display', serif; }
+.dc-divider { width: 46px; height: 2px; background: linear-gradient(90deg, #1D4ED8, #10B981); margin: 14px auto; border-radius: 2px; }
+.dc-bio { font-size: 13px; color: #5B6B82; margin-top: 6px; line-height: 1.7; }
+.dc-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 22px; }
+.dc-actions a { grid-column: span 1; background: #F1F5F9; color: #1739A6; border-radius: 12px; padding: 12px; font-size: 12.5px; font-weight: 700; text-align: center; }
+.dc-info { text-align: left; margin-top: 26px; border-top: 1px solid #E5EAF1; padding-top: 18px; }
+.dc-info-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; font-size: 13px; color: #334155; }
+.dc-info-icon { width: 34px; height: 34px; border-radius: 10px; background: #F1F5F9; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.dc-share-section { background: #131B33; border-radius: 20px; margin-top: 18px; padding: 20px; text-align: center; }
+.dc-share-title { color: #fff; font-size: 12.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; opacity: .8; margin-bottom: 14px; }
+.dc-share-row { display: flex; gap: 10px; justify-content: center; }
+.dc-share-btn { flex: 1; background: rgba(255,255,255,0.08); color: #fff; border-radius: 12px; padding: 12px 8px; font-size: 12px; font-weight: 600; text-align: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
+.dc-share-btn:hover { background: rgba(255,255,255,0.15); }
+.dc-footer { text-align: center; margin-top: 20px; font-size: 11px; color: #64748B; }
+.dc-qr-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.dc-qr-modal-overlay.open { display: flex; }
+.dc-qr-modal { background: #fff; border-radius: 20px; padding: 28px; text-align: center; max-width: 300px; }
+.dc-qr-modal #dc-qr-box { display: flex; justify-content: center; margin: 16px 0; }
+.dc-qr-close { margin-top: 10px; background: #F1F5F9; border-radius: 10px; padding: 10px 20px; font-size: 13px; font-weight: 700; color: #334155; display: inline-block; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="card-wrap">
+    <div class="dc-card">
+        <div class="dc-cover"></div>
+        {% if clinic.carte_photo_path %}
+        <img class="dc-photo" src="{{ url_for('documents.serve_upload', filename=clinic.carte_photo_path.split('/')[-1]) }}" alt="{{ clinic.nom_medecin }}">
+        {% elif clinic.logo_path %}
+        <img class="dc-photo" src="{{ url_for('documents.serve_upload', filename=clinic.logo_path.split('/')[-1]) }}" alt="Logo">
+        {% else %}
+        <img class="dc-photo" src="{{ url_for('static', filename='brand/logo.png') }}" alt="{{ app_name }}" style="object-fit:contain;padding:14px;">
+        {% endif %}
+
+        <div class="dc-body">
+            <div class="dc-name">{{ clinic.nom_medecin }}</div>
+            {% if clinic.specialite %}<div class="dc-specialty">{{ clinic.specialite }}</div>{% endif %}
+            <div class="dc-clinic">{{ clinic.nom_clinique }}</div>
+            <div class="dc-divider"></div>
+            {% if clinic.carte_bio %}<div class="dc-bio">{{ clinic.carte_bio }}</div>{% endif %}
+
+            <div class="dc-actions">
+                {% if clinic.telephone %}<a href="tel:{{ clinic.telephone }}">📞 Appeler</a>{% endif %}
+                {% if clinic.adresse %}<a href="https://maps.google.com/?q={{ clinic.adresse|urlencode }}" target="_blank">📍 Itinéraire</a>{% endif %}
+                <a href="{{ url_for('site.vcard', clinic_id=clinic.id) }}">💾 Enregistrer le contact</a>
+                {% if clinic.site_web %}<a href="{{ clinic.site_web }}" target="_blank">🌐 Site web</a>{% endif %}
+            </div>
+
+            <div class="dc-info">
+                {% if clinic.adresse %}<div class="dc-info-row"><span class="dc-info-icon">📍</span> {{ clinic.adresse }}</div>{% endif %}
+                {% if clinic.heures_travail %}<div class="dc-info-row"><span class="dc-info-icon">🕐</span> {{ clinic.heures_travail }}</div>{% endif %}
+                {% if clinic.telephone %}<div class="dc-info-row"><span class="dc-info-icon">📞</span> {{ clinic.telephone }}</div>{% endif %}
+                {% if clinic.email %}<div class="dc-info-row"><span class="dc-info-icon">📧</span> {{ clinic.email }}</div>{% endif %}
+                {% if clinic.carte_langues %}<div class="dc-info-row"><span class="dc-info-icon">🗣️</span> {{ clinic.carte_langues }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="dc-share-section">
+        <div class="dc-share-title">Partager cette carte</div>
+        <div class="dc-share-row">
+            <div class="dc-share-btn" onclick="openDcQr()">▦ QR Code</div>
+            <a class="dc-share-btn" href="https://wa.me/?text={{ (clinic.nom_medecin + ' — ' + clinic.nom_clinique + ' : ') | urlencode }}{{ card_url | urlencode }}" target="_blank">💬 WhatsApp</a>
+            <a class="dc-share-btn" href="mailto:?subject={{ ('Carte professionnelle — ' + clinic.nom_medecin) | urlencode }}&body={{ card_url | urlencode }}">✉️ E-mail</a>
+        </div>
+    </div>
+
+    <div class="dc-footer">Carte professionnelle digitale — propulsée par {{ app_name }}</div>
+</div>
+
+<div class="dc-qr-modal-overlay" id="dc-qr-overlay">
+    <div class="dc-qr-modal">
+        <strong style="font-size:14px;">Scanner pour ouvrir la carte</strong>
+        <div id="dc-qr-box"></div>
+        <div class="dc-qr-close" onclick="document.getElementById('dc-qr-overlay').classList.remove('open')">Fermer</div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+let dcQrGenerated = false;
+function openDcQr() {
+    document.getElementById('dc-qr-overlay').classList.add('open');
+    if (!dcQrGenerated) {
+        try {
+            new QRCode(document.getElementById('dc-qr-box'), { text: {{ card_url|tojson }}, width: 180, height: 180 });
+            dcQrGenerated = true;
+        } catch (e) {}
+    }
+}
+</script>
+</body>
+</html>

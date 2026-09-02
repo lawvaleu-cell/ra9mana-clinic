@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if is_rtl else 'ltr' }}" data-theme="{{ current_clinic.theme if current_clinic else 'light' }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<link rel="manifest" href="{{ url_for('site.manifest') }}">
+<meta name="theme-color" content="#2563EB">
+<link rel="icon" href="{{ url_for('documents.serve_upload', filename=site_logo.split('/')[-1]) if site_logo else url_for('static', filename='icons/icon-192.png') }}">
+<title>{% block title %}{{ app_name }}{% endblock %} — {{ app_name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<script>
+    /* Restauration précoce de la couleur personnalisée — évite le flash et garantit
+       que tout script (graphiques, etc.) lu plus bas voit déjà la bonne teinte. */
+    (function () {
+        try {
+            var raw = localStorage.getItem("ra9mana_theme_custom");
+            if (!raw) return;
+            var st = JSON.parse(raw);
+            if (!st || typeof st.h !== "number") return;
+            var h = st.h, s = st.s, l = st.l;
+            function hslToRgb(h, s, l) {
+                s /= 100; l /= 100;
+                var c = (1 - Math.abs(2 * l - 1)) * s;
+                var x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+                var m = l - c / 2, r = 0, g = 0, b = 0;
+                if (h < 60) { r = c; g = x; } else if (h < 120) { r = x; g = c; }
+                else if (h < 180) { g = c; b = x; } else if (h < 240) { g = x; b = c; }
+                else if (h < 300) { r = x; b = c; } else { r = c; b = x; }
+                return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
+            }
+            var rgb = hslToRgb(h, s, l);
+            var lum = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255;
+            var contrast = lum > 0.52 ? "#17242B" : "#FFFFFF";
+            var glowPct = ({ doux: 10, elegant: 16, eclatant: 24 }[st.intensity] || 16) / 100;
+            var root = document.documentElement;
+            root.style.setProperty("--primary", "hsl(" + h + ", " + s + "%, " + l + "%)");
+            root.style.setProperty("--primary-dark", "hsl(" + h + ", " + Math.min(s + 4, 100) + "%, " + Math.max(l - 10, 8) + "%)");
+            root.style.setProperty("--primary-darker", "hsl(" + h + ", " + s + "%, " + Math.max(l - 22, 4) + "%)");
+            root.style.setProperty("--primary-light", "hsl(" + h + ", " + Math.min(s * 0.55, 45) + "%, 93%)");
+            root.style.setProperty("--primary-contrast", contrast);
+            root.style.setProperty("--primary-glow", "hsla(" + h + ", " + s + "%, " + l + "%, " + glowPct + ")");
+            root.style.setProperty("--sidebar-active-bg", "hsla(" + h + ", " + s + "%, " + Math.min(l + 20, 75) + "%, 0.16)");
+        } catch (e) { /* ignore */ }
+    })();
+</script>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="theme-glow theme-glow-a"></div>
+<div class="theme-glow theme-glow-b"></div>
+
+<div class="flash-container" id="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+</div>
+
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="{{ t('nav.dashboard') }}">
+        <div class="sidebar-brand">
+            <img class="logo-mark" src="{{ url_for('documents.serve_upload', filename=site_logo.split('/')[-1]) if site_logo else url_for('static', filename='brand/logo.png') }}" alt="{{ app_name }}" style="width:38px;height:38px;border-radius:12px;object-fit:contain;background:#fff;">
+            <span>{{ app_name }}</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-label"><span class="visually-hidden">{{ t('nav.general') }}</span></div>
+            {% set nav_icon_dashboard %}<svg class="icon-anim-pop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>{% endset %}
+            <a class="nav-item {{ 'active' if request.endpoint == 'dashboard.index' }}" href="{{ url_for('dashboard.index') }}">{{ nav_icon_dashboard }}<span class="nav-label">{{ t('nav.dashboard') }}</span></a>
+
+            <div class="nav-section-label"><span class="visually-hidden">{{ t('nav.clinic') }}</span></div>
+            <a class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('patients.') }}" href="{{ url_for('patients.list_patients') }}">
+                <svg class="icon-anim-pop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span class="nav-label">{{ t('nav.patients') }}</span>
+            </a>
+            <a class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('appointments.') }}" href="{{ url_for('appointments.calendar_view') }}">
+                <svg class="icon-anim-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                <span class="nav-label">{{ t('nav.appointments') }}</span>
+            </a>
+            <a class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('waiting_room.') }}" href="{{ url_for('waiting_room.manage') }}">
+                <svg class="icon-anim-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <span class="nav-label">{{ t('nav.waiting_room') }}</span>
+            </a>
+            <a class="nav-item" href="{{ url_for('waiting_room.tv_display', clinic_id=current_clinic.id if current_clinic else '') }}" target="_blank">
+                <svg class="icon-anim-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                <span class="nav-label">{{ t('nav.tv_screen') }}</span>
+            </a>
+
+            <div class="nav-section-label"><span class="visually-hidden">{{ t('nav.care') }}</span></div>
+            <a class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('prescriptions.') }}" href="{{ url_for('prescriptions.list_prescriptions') }}">
+                <svg class="icon-anim-wiggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6M9 11h2"/></svg>
+                <span class="nav-label">{{ t('nav.prescriptions') }}</span>
+            </a>
+            <a class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('inventory.') }}" href="{{ url_for('inventory.list_medicines') }}">
+                <svg class="icon-anim-wiggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.5 7.3 12 12l-8.5-4.7M12 22V12"/><path d="m3.3 7 8.2 4.5a1 1 0 0 0 1 0L20.7 7"/><path d="M20 7.3V17a1 1 0 0 1-.5.87l-7 3.85a1 1 0 0 1-1 0l-7-3.85A1 1 0 0 1 4 17V7.3a1 1 0 0 1 .5-.87l7-3.85a1 1 0 0 1 1 0l7 3.85a1 1 0 0 1 .5.87Z"/></svg>
+                <span class="nav-label">{{ t('nav.inventory') }}</span>
+            </a>
+
+            <div class="nav-section-label"><span class="visually-hidden">{{ t('nav.finance') }}</span></div>
+            <a class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('billing.list') }}" href="{{ url_for('billing.list_invoices') }}">
+                <svg class="icon-anim-pop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 10h8M8 14h5"/></svg>
+                <span class="nav-label">{{ t('nav.invoices') }}</span>
+            </a>
+            <a class="nav-item {{ 'active' if request.endpoint == 'billing.expenses' }}" href="{{ url_for('billing.expenses') }}">
+                <svg class="icon-anim-grow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <span class="nav-label">{{ t('nav.expenses') }}</span>
+            </a>
+            <a class="nav-item {{ 'active' if request.endpoint == 'billing.reports' }}" href="{{ url_for('billing.reports') }}">
+                <svg class="icon-anim-grow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
+                <span class="nav-label">{{ t('nav.reports') }}</span>
+            </a>
+
+            {% if current_user and current_user.role in ('medecin', 'gestionnaire') %}
+            <div class="nav-section-label"><span class="visually-hidden">{{ t('nav.admin') }}</span></div>
+            <a class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('users.') }}" href="{{ url_for('users.list_users') }}">
+                <svg class="icon-anim-pop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span class="nav-label">{{ t('nav.users') }}</span>
+            </a>
+            <a class="nav-item {{ 'active' if request.endpoint == 'settings.clinic_profile' }}" href="{{ url_for('settings.clinic_profile') }}">
+                <svg class="icon-anim-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span class="nav-label">{{ t('nav.settings') }}</span>
+            </a>
+            <a class="nav-item {{ 'active' if request.endpoint == 'backup.backup_page' }}" href="{{ url_for('backup.backup_page') }}">
+                <svg class="icon-anim-bounce" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                <span class="nav-label">{{ t('nav.backup') }}</span>
+            </a>
+            <a class="nav-item {{ 'active' if request.endpoint == 'audit.list_logs' }}" href="{{ url_for('audit.list_logs') }}">
+                <svg class="icon-anim-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+                <span class="nav-label">{{ t('nav.audit') }}</span>
+            </a>
+            {% endif %}
+            <a class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('support.') }}" href="{{ url_for('support.list_tickets') }}">
+                <svg class="icon-anim-ring" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span class="nav-label">{{ t('nav.support') }}</span>
+                {% if unread_tickets > 0 %}<span class="nav-badge">{{ unread_tickets }}</span>{% endif %}
+            </a>
+            <button type="button" class="nav-item" id="assistant-nav-btn">
+                <svg class="icon-anim-wiggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="5" y="8" width="14" height="11" rx="4"/>
+                    <path d="M12 8V4M9 4h6"/>
+                    <circle cx="9.5" cy="13.5" r="1.3" fill="currentColor" stroke="none"/>
+                    <circle cx="14.5" cy="13.5" r="1.3" fill="currentColor" stroke="none"/>
+                    <path d="M9.5 16.5c1 .8 4 .8 5 0"/>
+                    <path d="M3 12h2M19 12h2"/>
+                </svg>
+                <span class="nav-label">{{ 'المساعد' if lang == 'ar' else 'Assistant' }}</span>
+            </button>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a class="user-chip" href="{{ url_for('settings.clinic_profile') }}">
+                <span class="avatar">{{ (current_user.nom_complet or "U")[0]|upper }}</span>
+                <span class="nav-label">
+                    <span class="user-chip-name">{{ current_user.nom_complet if current_user else '' }}</span>
+                    <span class="user-chip-role">{{ statut_rdv_labels.get(current_user.role, current_user.role) if current_user else '' }}</span>
+                </span>
+            </a>
+        </div>
+    </aside>
+
+    <div class="main-area">
+        <header class="topbar">
+            <button class="icon-btn sidebar-toggle" id="sidebar-toggle-btn" aria-label="Menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            </button>
+
+            <a class="topbar-brand" href="{{ url_for('dashboard.index') }}">
+                <img src="{{ url_for('documents.serve_upload', filename=site_logo.split('/')[-1]) if site_logo else url_for('static', filename='brand/logo.png') }}" alt="{{ app_name }}">
+                <span>{{ app_name }}</span>
+            </a>
+
+            <div class="topbar-search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="global-search-input" placeholder="{{ t('search.placeholder') }}" autocomplete="off">
+                <div class="search-dropdown" id="global-search-dropdown"></div>
+            </div>
+
+            <div class="topbar-actions">
+                <div class="theme-switcher" title="Langue" style="padding:2px;">
+                    {% for code, label in supported_languages.items() %}
+                    <a href="{{ url_for('site.set_language', code=code) }}" class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:11px;font-weight:800;{{ 'color:var(--primary);' if lang == code }}">{{ code|upper }}</a>
+                    {% endfor %}
+                </div>
+                <div class="theme-switcher" title="Changer de thème">
+                    <span class="theme-dot" data-theme="light" style="background:#F4F7FB;border:1px solid #E5EAF1;"></span>
+                    <span class="theme-dot" data-theme="dark" style="background:#0B1120;"></span>
+                    <span class="theme-dot" data-theme="blue" style="background:#1D4ED8;"></span>
+                    <span class="theme-dot" data-theme="emerald" style="background:#059669;"></span>
+                    <span class="theme-dot theme-dot-custom" id="custom-color-trigger" title="Personnalisation"></span>
+
+                    <div class="color-picker-popover" id="color-picker-popover">
+                        <h4>🎨 Personnalisation</h4>
+
+                        <div class="color-wheel-wrap">
+                            <div class="color-wheel" id="color-wheel">
+                                <div class="color-wheel-handle" id="color-wheel-handle"></div>
+                            </div>
+                        </div>
+
+                        <div class="color-picker-swatch-row">
+                            <span class="color-picker-swatch" id="color-picker-swatch"></span>
+                            <div class="color-picker-codes">
+                                <div><label>HEX</label><input type="text" id="color-code-hex" spellcheck="false"></div>
+                                <div><label>RGB</label><span id="color-code-rgb">—</span></div>
+                                <div><label>HSL</label><span id="color-code-hsl">—</span></div>
+                            </div>
+                        </div>
+
+                        <div class="color-picker-slider-row">
+                            <label>Saturation</label>
+                            <input type="range" id="slider-saturation" min="10" max="95" value="52">
+                        </div>
+                        <div class="color-picker-slider-row">
+                            <label>Luminosité</label>
+                            <input type="range" id="slider-lightness" min="20" max="70" value="37">
+                        </div>
+
+                        <div class="color-picker-intensity">
+                            <label>Intensité</label>
+                            <div class="intensity-options" id="intensity-options">
+                                <button type="button" data-intensity="doux">Doux</button>
+                                <button type="button" data-intensity="elegant" class="active">Élégant</button>
+                                <button type="button" data-intensity="eclatant">Éclatant</button>
+                            </div>
+                        </div>
+
+                        <div class="color-picker-actions">
+                            <button type="button" id="color-picker-reset">↺ Réinitialiser le thème</button>
+                            <button type="button" class="color-picker-apply" id="color-picker-close">✓ Terminé</button>
+                        </div>
+                    </div>
+                </div>
+                <a class="icon-btn" href="{{ url_for('notifications.list_notifications') }}" aria-label="Notifications">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    {% if unread_notifications > 0 %}<span class="dot"></span>{% endif %}
+                </a>
+                <a class="icon-btn" href="{{ url_for('auth.logout') }}" aria-label="Déconnexion" title="Déconnexion">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+                </a>
+            </div>
+        </header>
+
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-taille-papier">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="card-title">Format du document</div>
+            <button class="icon-btn" onclick="closeModal('modal-taille-papier')">✕</button>
+        </div>
+        <p class="text-muted" style="font-size:13px;margin-bottom:16px;">Choisissez le format papier avant d'imprimer ou de télécharger.</p>
+        <div class="flex gap-2" style="margin-bottom:20px;">
+            <div class="taille-btn active" data-taille="A4" onclick="setTaillePapier('A4')">A4<span class="taille-dims">210 × 297 mm</span></div>
+            <div class="taille-btn" data-taille="A5" onclick="setTaillePapier('A5')">A5<span class="taille-dims">148 × 210 mm</span></div>
+        </div>
+        <div class="flex gap-2">
+            <button class="btn btn-primary btn-block" onclick="confirmerImpression()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+                Imprimer
+            </button>
+            <button class="btn btn-secondary btn-block" onclick="confirmerTelechargement()">Télécharger PDF</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var t = "{{ current_clinic.theme if current_clinic else 'light' }}";
+        document.querySelectorAll(".theme-dot").forEach(function(el) {
+            el.classList.toggle("active", el.dataset.theme === t);
+        });
+    });
+</script>
+
+<script>
+    /* ---- Personnalisation dynamique du thème (roue + saturation/luminosité) ---- */
+    (function () {
+        var STORAGE_KEY = "ra9mana_theme_custom";
+        var root = document.documentElement;
+        var trigger = document.getElementById("custom-color-trigger");
+        var popover = document.getElementById("color-picker-popover");
+        var wheel = document.getElementById("color-wheel");
+        var handle = document.getElementById("color-wheel-handle");
+        var resetBtn = document.getElementById("color-picker-reset");
+        var closeBtn = document.getElementById("color-picker-close");
+        var satSlider = document.getElementById("slider-saturation");
+        var lightSlider = document.getElementById("slider-lightness");
+        var intensityWrap = document.getElementById("intensity-options");
+        var swatch = document.getElementById("color-picker-swatch");
+        var hexInput = document.getElementById("color-code-hex");
+        var rgbOut = document.getElementById("color-code-rgb");
+        var hslOut = document.getElementById("color-code-hsl");
+        if (!trigger || !wheel) return;
+
+        var radius = 74;
+        var dragging = false;
+        var state = { h: 210, s: 52, l: 37, intensity: "elegant" };
+        var INTENSITY_GLOW = { doux: 10, elegant: 16, eclatant: 24 };
+
+        /* ---- Conversions couleur ---- */
+        function hslToRgb(h, s, l) {
+            s /= 100; l /= 100;
+            var c = (1 - Math.abs(2 * l - 1)) * s;
+            var x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+            var m = l - c / 2, r = 0, g = 0, b = 0;
+            if (h < 60) { r = c; g = x; } else if (h < 120) { r = x; g = c; }
+            else if (h < 180) { g = c; b = x; } else if (h < 240) { g = x; b = c; }
+            else if (h < 300) { r = x; b = c; } else { r = c; b = x; }
+            return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
+        }
+        function rgbToHex(r, g, b) {
+            return "#" + [r, g, b].map(function (v) { return v.toString(16).padStart(2, "0"); }).join("");
+        }
+        function relativeLuminance(r, g, b) {
+            var a = [r, g, b].map(function (v) {
+                v /= 255;
+                return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+            });
+            return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+        }
+        function hexToHsl(hex) {
+            hex = hex.replace("#", "");
+            if (hex.length === 3) hex = hex.split("").map(function (c) { return c + c; }).join("");
+            if (!/^[0-9a-fA-F]{6}$/.test(hex)) return null;
+            var r = parseInt(hex.slice(0, 2), 16) / 255;
+            var g = parseInt(hex.slice(2, 4), 16) / 255;
+            var b = parseInt(hex.slice(4, 6), 16) / 255;
+            var max = Math.max(r, g, b), min = Math.min(r, g, b);
+            var h, s, l = (max + min) / 2;
+            if (max === min) { h = s = 0; } else {
+                var d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    default: h = (r - g) / d + 4;
+                }
+                h *= 60;
+            }
+            return { h: Math.round(h), s: Math.round(s * 100), l: Math.round(l * 100) };
+        }
+
+        /* ---- Génération et application de la palette ---- */
+        function applyState(persist) {
+            var h = state.h, s = state.s, l = state.l;
+            var rgb = hslToRgb(h, s, l);
+            var hex = rgbToHex(rgb[0], rgb[1], rgb[2]);
+            var luminance = relativeLuminance(rgb[0], rgb[1], rgb[2]);
+            var contrast = luminance > 0.52 ? "#17242B" : "#FFFFFF";
+            var glowPct = INTENSITY_GLOW[state.intensity] || 16;
+
+            var vars = {
+                "--primary": "hsl(" + h + ", " + s + "%, " + l + "%)",
+                "--primary-dark": "hsl(" + h + ", " + Math.min(s + 4, 100) + "%, " + Math.max(l - 10, 8) + "%)",
+                "--primary-darker": "hsl(" + h + ", " + s + "%, " + Math.max(l - 22, 4) + "%)",
+                "--primary-light": "hsl(" + h + ", " + Math.min(s * 0.55, 45) + "%, 93%)",
+                "--primary-contrast": contrast,
+                "--primary-glow": "hsla(" + h + ", " + s + "%, " + l + "%, " + (glowPct / 100) + ")",
+                "--sidebar-active-bg": "hsla(" + h + ", " + s + "%, " + Math.min(l + 20, 75) + "%, 0.16)"
+            };
+            Object.keys(vars).forEach(function (k) { root.style.setProperty(k, vars[k]); });
+
+            trigger.classList.add("active");
+            trigger.style.background = "hsl(" + h + ", " + s + "%, " + l + "%)";
+            swatch.style.background = "hsl(" + h + ", " + s + "%, " + l + "%)";
+            hexInput.value = hex;
+            rgbOut.textContent = "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")";
+            hslOut.textContent = "hsl(" + h + ", " + s + "%, " + l + "%)";
+            satSlider.value = s;
+            lightSlider.value = l;
+            positionHandle(h);
+
+            document.querySelectorAll(".theme-dot[data-theme]").forEach(function (el) { el.classList.remove("active"); });
+            document.querySelectorAll("#intensity-options button").forEach(function (btn) {
+                btn.classList.toggle("active", btn.dataset.intensity === state.intensity);
+            });
+
+            document.dispatchEvent(new CustomEvent("ra9mana:themechange", { detail: { primary: vars["--primary"], primaryLight: vars["--primary-light"] } }));
+
+            if (persist) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+
+        function clearCustom() {
+            ["--primary", "--primary-dark", "--primary-darker", "--primary-light", "--primary-contrast", "--primary-glow", "--sidebar-active-bg"].forEach(function (k) {
+                root.style.removeProperty(k);
+            });
+            trigger.classList.remove("active");
+            trigger.style.background = "";
+            localStorage.removeItem(STORAGE_KEY);
+            state = { h: 210, s: 52, l: 37, intensity: "elegant" };
+            var cs = getComputedStyle(root);
+            swatch.style.background = cs.getPropertyValue("--primary").trim();
+            hexInput.value = "";
+            rgbOut.textContent = "—";
+            hslOut.textContent = "—";
+            satSlider.value = 52; lightSlider.value = 37;
+            document.querySelectorAll("#intensity-options button").forEach(function (btn) {
+                btn.classList.toggle("active", btn.dataset.intensity === "elegant");
+            });
+            var t = "{{ current_clinic.theme if current_clinic else 'light' }}";
+            document.querySelectorAll(".theme-dot[data-theme]").forEach(function (el) {
+                el.classList.toggle("active", el.dataset.theme === t);
+            });
+            positionHandle(210);
+            document.dispatchEvent(new CustomEvent("ra9mana:themechange", { detail: { reset: true } }));
+        }
+
+        function positionHandle(hue) {
+            var rad = (hue * Math.PI) / 180;
+            var dx = radius * Math.sin(rad);
+            var dy = -radius * Math.cos(rad);
+            handle.style.left = (84 + dx) + "px";
+            handle.style.top = (84 + dy) + "px";
+        }
+
+        function hueFromEvent(evt) {
+            var rect = wheel.getBoundingClientRect();
+            var cx = rect.left + rect.width / 2;
+            var cy = rect.top + rect.height / 2;
+            var point = evt.touches ? evt.touches[0] : evt;
+            var dx = point.clientX - cx;
+            var dy = point.clientY - cy;
+            var angle = (Math.atan2(dx, -dy) * 180) / Math.PI;
+            if (angle < 0) angle += 360;
+            return Math.round(angle);
+        }
+
+        wheel.addEventListener("mousedown", function (e) { dragging = true; state.h = hueFromEvent(e); applyState(true); });
+        wheel.addEventListener("touchstart", function (e) { dragging = true; state.h = hueFromEvent(e); applyState(true); }, { passive: true });
+        window.addEventListener("mousemove", function (e) { if (dragging) { state.h = hueFromEvent(e); applyState(true); } });
+        window.addEventListener("touchmove", function (e) { if (dragging) { state.h = hueFromEvent(e); applyState(true); } }, { passive: true });
+        window.addEventListener("mouseup", function () { dragging = false; });
+        window.addEventListener("touchend", function () { dragging = false; });
+
+        satSlider.addEventListener("input", function () { state.s = parseInt(satSlider.value, 10); applyState(true); });
+        lightSlider.addEventListener("input", function () { state.l = parseInt(lightSlider.value, 10); applyState(true); });
+
+        intensityWrap.addEventListener("click", function (e) {
+            var btn = e.target.closest("button[data-intensity]");
+            if (!btn) return;
+            state.intensity = btn.dataset.intensity;
+            applyState(true);
+        });
+
+        hexInput.addEventListener("change", function () {
+            var parsed = hexToHsl(hexInput.value.trim());
+            if (!parsed) return;
+            state.h = parsed.h; state.s = parsed.s; state.l = parsed.l;
+            applyState(true);
+        });
+
+        trigger.addEventListener("click", function (e) {
+            e.stopPropagation();
+            popover.classList.toggle("open");
+        });
+        closeBtn.addEventListener("click", function () { popover.classList.remove("open"); });
+        resetBtn.addEventListener("click", function () { clearCustom(); });
+        document.addEventListener("click", function (e) {
+            if (!popover.contains(e.target) && e.target !== trigger) popover.classList.remove("open");
+        });
+
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                var parsedState = JSON.parse(saved);
+                if (parsedState && typeof parsedState.h === "number") {
+                    state = parsedState;
+                    applyState(false);
+                } else { positionHandle(state.h); }
+            } catch (e) { positionHandle(state.h); }
+        } else {
+            var cs = getComputedStyle(root);
+            swatch.style.background = cs.getPropertyValue("--primary").trim();
+            positionHandle(state.h);
+        }
+    })();
+</script>
+
+{% if current_user %}
+<div class="assistant-floating-btn" id="assistant-floating-btn" title="Assistant">
+    <span class="assistant-fab-glow"></span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="4.5" y="8" width="15" height="12" rx="4.5"/>
+        <path d="M12 8V3.5M9 3.5h6"/>
+        <circle cx="9.3" cy="14" r="1.4" fill="currentColor" stroke="none"/>
+        <circle cx="14.7" cy="14" r="1.4" fill="currentColor" stroke="none"/>
+        <path d="M9 17.2c1.3 1 4.7 1 6 0"/>
+        <path d="M2.5 12.5h2M19.5 12.5h2"/>
+    </svg>
+    <span class="assistant-fab-dot"></span>
+</div>
+
+<div class="assistant-panel" id="assistant-panel">
+    <div class="assistant-panel-header">
+        <div class="assistant-header-info">
+            <span class="assistant-avatar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="4.5" y="8" width="15" height="12" rx="4.5"/>
+                    <path d="M12 8V3.5M9 3.5h6"/>
+                    <circle cx="9.3" cy="14" r="1.4" fill="currentColor" stroke="none"/>
+                    <circle cx="14.7" cy="14" r="1.4" fill="currentColor" stroke="none"/>
+                    <path d="M9 17.2c1.3 1 4.7 1 6 0"/>
+                </svg>
+            </span>
+            <div>
+                <div class="assistant-title">Assistant</div>
+                <div class="assistant-status"><span class="assistant-status-dot"></span> Prêt</div>
+            </div>
+        </div>
+        <button type="button" class="assistant-close-btn" id="assistant-close-btn" aria-label="Fermer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+    </div>
+    <div class="assistant-messages" id="assistant-messages">
+        <div class="assistant-msg assistant-msg-bot">
+            Bonjour docteur, comment puis-je vous aider aujourd'hui ? Vous pouvez me demander vos rendez-vous, chercher un patient, ou consulter vos revenus.
+        </div>
+    </div>
+    <div class="assistant-input-row">
+        <input type="text" id="assistant-input" placeholder="Écrivez un message…" autocomplete="off">
+        <button type="button" id="assistant-send-btn" aria-label="Envoyer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+        </button>
+    </div>
+</div>
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% if current_user %}
+<script>
+(function () {
+    var fab = document.getElementById('assistant-floating-btn');
+    var panel = document.getElementById('assistant-panel');
+    var navBtn = document.getElementById('assistant-nav-btn');
+    var closeBtn = document.getElementById('assistant-close-btn');
+    var messages = document.getElementById('assistant-messages');
+    var input = document.getElementById('assistant-input');
+    var sendBtn = document.getElementById('assistant-send-btn');
+    if (!fab || !panel) return;
+
+    function getCsrf() {
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.content : '';
+    }
+
+    function openPanel() { panel.classList.add('open'); setTimeout(function () { input.focus(); }, 150); }
+    function closePanel() { panel.classList.remove('open'); }
+    function togglePanel() { panel.classList.contains('open') ? closePanel() : openPanel(); }
+
+    fab.addEventListener('click', togglePanel);
+    if (navBtn) navBtn.addEventListener('click', function (e) { e.preventDefault(); togglePanel(); });
+    closeBtn.addEventListener('click', closePanel);
+
+    function addMessage(text, who) {
+        var div = document.createElement('div');
+        div.className = 'assistant-msg assistant-msg-' + who;
+        div.textContent = text;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+        return div;
+    }
+
+    function addTyping() {
+        var div = document.createElement('div');
+        div.className = 'assistant-msg assistant-msg-bot assistant-msg-typing';
+        div.innerHTML = '<span></span><span></span><span></span>';
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+        return div;
+    }
+
+    function addQuickReplies() {
+        var wrap = document.createElement('div');
+        wrap.className = 'assistant-quick-replies';
+        var yes = document.createElement('button');
+        yes.className = 'assistant-quick-yes';
+        yes.textContent = 'Oui';
+        yes.addEventListener('click', function () { sendMessage('oui'); });
+        var no = document.createElement('button');
+        no.textContent = 'Non';
+        no.addEventListener('click', function () { sendMessage('non'); });
+        wrap.appendChild(yes); wrap.appendChild(no);
+        messages.appendChild(wrap);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function addSuggestedActions(actionsList) {
+        var wrap = document.createElement('div');
+        wrap.className = 'assistant-quick-replies assistant-suggested-actions';
+        actionsList.forEach(function (a) {
+            if (!a.url) return;
+            var btn = document.createElement('button');
+            btn.textContent = a.label;
+            btn.addEventListener('click', function () { window.location.href = a.url; });
+            wrap.appendChild(btn);
+        });
+        messages.appendChild(wrap);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function sendMessage(text) {
+        text = (text || input.value).trim();
+        if (!text) return;
+        addMessage(text, 'user');
+        input.value = '';
+        var typingEl = addTyping();
+
+        fetch("{{ url_for('assistant.chat') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text, csrf_token: getCsrf() })
+        }).then(function (r) { return r.json(); }).then(function (data) {
+            typingEl.remove();
+            addMessage(data.reply || "Désolé, une erreur est survenue.", 'bot');
+            if (data.requires_confirmation) addQuickReplies();
+            if (data.suggested_actions && data.suggested_actions.length) addSuggestedActions(data.suggested_actions);
+            if (data.navigate_url) {
+                setTimeout(function () { window.location.href = data.navigate_url; }, 900);
+            }
+        }).catch(function () {
+            typingEl.remove();
+            addMessage("Impossible de contacter l'assistant pour le moment.", 'bot');
+        });
+    }
+
+    sendBtn.addEventListener('click', function () { sendMessage(); });
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
+    });
+})();
+</script>
+{% endif %}
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

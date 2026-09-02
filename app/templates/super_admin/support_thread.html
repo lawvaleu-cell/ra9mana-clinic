@@ -1,0 +1,43 @@
+{% extends "super_admin/base.html" %}
+{% block title %}{{ ticket.sujet }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">{{ ticket.sujet }}</div>
+        <div class="page-subtitle">{{ ticket.nom_clinique }} — Statut : {{ ticket.statut }}</div>
+    </div>
+    <div class="flex gap-2">
+        <form method="POST" action="{{ url_for('super_admin.support_toggle_pin', ticket_id=ticket.id) }}">
+            <button class="btn btn-secondary btn-sm" type="submit">{{ '📌 Désépingler' if ticket.epingle else '📌 Épingler' }}</button>
+        </form>
+        <form method="POST" action="{{ url_for('super_admin.support_update_status', ticket_id=ticket.id) }}">
+            <select class="form-control" name="statut" onchange="this.form.submit()" style="padding:8px 10px;">
+                <option value="ouvert" {{ 'selected' if ticket.statut == 'ouvert' }}>Ouvert</option>
+                <option value="resolu" {{ 'selected' if ticket.statut == 'resolu' }}>Résolu</option>
+                <option value="archive" {{ 'selected' if ticket.statut == 'archive' }}>Archivé</option>
+            </select>
+        </form>
+        <a href="{{ url_for('super_admin.clinic_detail', clinic_id=ticket.clinic_id) }}" class="btn btn-secondary btn-sm">Voir la clinique</a>
+    </div>
+</div>
+
+<div class="card" style="max-width:760px;">
+    <div style="display:flex;flex-direction:column;gap:12px;max-height:500px;overflow-y:auto;padding-right:6px;">
+        {% for m in messages %}
+        <div style="align-self:{{ 'flex-end' if m.auteur == 'admin' else 'flex-start' }};max-width:75%;">
+            <div style="background:{{ 'var(--primary)' if m.auteur == 'admin' else 'var(--bg-surface-alt)' }};color:{{ '#fff' if m.auteur == 'admin' else 'var(--text-primary)' }};padding:10px 14px;border-radius:var(--radius-md);font-size:13px;">
+                {{ m.message }}
+            </div>
+            <div class="text-muted" style="font-size:10.5px;margin-top:3px;{{ 'text-align:right;' if m.auteur == 'admin' }}">
+                {{ m.auteur_nom or ('Vous' if m.auteur == 'admin' else 'Clinique') }} — {{ m.date_creation|datetime_fr }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <form method="POST" action="{{ url_for('super_admin.support_reply', ticket_id=ticket.id) }}" class="flex gap-2" style="margin-top:18px;">
+        <input class="form-control" name="message" placeholder="Répondre à la clinique…" required autocomplete="off">
+        <button type="submit" class="btn btn-primary">Envoyer</button>
+    </form>
+</div>
+{% endblock %}

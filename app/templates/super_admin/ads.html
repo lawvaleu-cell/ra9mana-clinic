@@ -1,0 +1,38 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Publicités{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">Publicités de la page d'accueil</div>
+    <a href="{{ url_for('super_admin.ads_create') }}" class="btn btn-primary">+ Nouvelle publicité</a>
+</div>
+<div class="card">
+    {% if ads %}
+    <div class="table-wrap">
+    <table class="data-table">
+        <thead><tr><th>Ordre</th><th>Titre</th><th>Lien</th><th>Période</th><th>Statut</th><th></th></tr></thead>
+        <tbody>
+        {% for ad in ads %}
+            <tr>
+                <td>{{ ad.ordre }}</td>
+                <td style="font-weight:600;">{{ ad.titre }}</td>
+                <td class="text-muted">{{ ad.lien_url or '—' }}</td>
+                <td class="text-muted">
+                    {% if ad.date_debut or ad.date_fin %}{{ ad.date_debut or '…' }} → {{ ad.date_fin or '…' }}{% else %}Permanente{% endif %}
+                </td>
+                <td>{% if ad.actif %}<span class="badge badge-success">Active</span>{% else %}<span class="badge badge-neutral">Inactive</span>{% endif %}</td>
+                <td class="flex gap-2">
+                    <a href="{{ url_for('super_admin.ads_edit', ad_id=ad.id) }}" class="btn btn-ghost btn-sm">Modifier</a>
+                    <form method="POST" action="{{ url_for('super_admin.ads_delete', ad_id=ad.id) }}" onsubmit="return confirm('Supprimer cette publicité ?');">
+                        <button class="btn btn-danger btn-sm" type="submit">Suppr.</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><p>Aucune publicité créée.</p></div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Recherche{% endblock %}
+{% block content %}
+<div class="page-header"><div class="page-title">Résultats pour « {{ q }} »</div></div>
+
+{% if results.patients %}
+<div class="card" style="margin-bottom:16px;">
+    <div class="card-title" style="margin-bottom:10px;">Patients</div>
+    {% for p in results.patients %}
+    <a href="{{ url_for('patients.view_patient', patient_id=p.id) }}" class="flex justify-between" style="padding:8px 0;border-bottom:1px solid var(--border);">
+        <span>{{ p.prenom }} {{ p.nom }}</span><span class="text-muted">{{ p.telephone or '' }}</span>
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if results.medicaments %}
+<div class="card" style="margin-bottom:16px;">
+    <div class="card-title" style="margin-bottom:10px;">Médicaments</div>
+    {% for m in results.medicaments %}
+    <a href="{{ url_for('inventory.edit_medicine', med_id=m.id) }}" class="flex justify-between" style="padding:8px 0;border-bottom:1px solid var(--border);">
+        <span>{{ m.nom }}</span><span class="text-muted">Stock : {{ m.quantite }}</span>
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if results.factures %}
+<div class="card" style="margin-bottom:16px;">
+    <div class="card-title" style="margin-bottom:10px;">Factures</div>
+    {% for f in results.factures %}
+    <a href="{{ url_for('billing.view_invoice', facture_id=f.id) }}" class="flex justify-between" style="padding:8px 0;border-bottom:1px solid var(--border);">
+        <span>{{ f.numero_facture }} — {{ f.prenom }} {{ f.nom }}</span><span class="text-muted">{{ f.montant_total }}</span>
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if not results or (not results.patients and not results.medicaments and not results.factures) %}
+<div class="card"><div class="empty-state"><p>Aucun résultat.</p></div></div>
+{% endif %}
+{% endblock %}

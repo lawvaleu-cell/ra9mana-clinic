@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ clinic.nom_clinique if clinic else 'RA9MANA Clinic' }} — File d'attente</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<style>
+    body { background: #0A0F1E; color: #fff; height: 100vh; overflow: hidden; }
+    .tv-wrap { display: flex; flex-direction: column; height: 100vh; padding: 40px 60px; }
+    .tv-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .tv-clinic { display: flex; align-items: center; gap: 16px; font-family: var(--font-display); font-weight: 800; font-size: 30px; }
+    .tv-clinic-info { font-size: 13px; color: #7C8BB5; margin-top: 6px; margin-left: 54px; }
+    .tv-meteo { font-size: 15px; color: #93A2C4; margin-top: 4px; }
+    .tv-clock { text-align: right; }
+    .tv-time { font-family: var(--font-display); font-size: 40px; font-weight: 800; }
+    .tv-date { color: #93A2C4; font-size: 15px; text-transform: capitalize; }
+    .tv-main { flex: 1; display: grid; grid-template-columns: 1.4fr 1fr; gap: 30px; }
+    .tv-panel { background: linear-gradient(160deg, #131B33, #0E1526); border-radius: 28px; padding: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #223055; }
+    .tv-label { letter-spacing: .12em; text-transform: uppercase; font-size: 16px; color: #7C8BB5; font-weight: 700; margin-bottom: 18px; }
+    .tv-number { font-family: var(--font-display); font-size: 220px; font-weight: 800; line-height: 1; background: linear-gradient(135deg, #4F83F1, #34D399); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .tv-room { font-size: 26px; color: #C7D2ED; margin-top: 14px; }
+    .tv-side { display: flex; flex-direction: column; gap: 24px; }
+    .tv-next { background: #131B33; border-radius: 24px; padding: 30px; text-align: center; border: 1px solid #223055; }
+    .tv-next-number { font-family: var(--font-display); font-size: 74px; font-weight: 800; color: #FBBF24; }
+    .tv-tips { background: #131B33; border-radius: 24px; padding: 30px; flex: 1; border: 1px solid #223055; display:flex; flex-direction:column; justify-content:center; }
+    .tv-tip-text { font-size: 19px; line-height: 1.5; color: #DCE3F5; }
+    .tv-footer { text-align: center; color: #5B6B93; font-size: 13px; margin-top: 20px; }
+    .tv-qr-corner { position: fixed; bottom: 24px; right: 24px; background: rgba(255,255,255,0.95); border-radius: 14px; padding: 10px; text-align: center; }
+    .tv-qr-corner div { font-size: 9px; color: #334155; margin-top: 4px; font-weight: 700; }
+
+    /* ---- Thème 2 : Modern Medical Blue ---- */
+    body[data-ecran-theme="bleu"] { background: linear-gradient(160deg, #0B2A7A, #1D4ED8); }
+    body[data-ecran-theme="bleu"] .tv-panel, body[data-ecran-theme="bleu"] .tv-next, body[data-ecran-theme="bleu"] .tv-tips { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.18); backdrop-filter: blur(6px); }
+    body[data-ecran-theme="bleu"] .tv-number { background: linear-gradient(135deg, #FFFFFF, #BFDBFE); -webkit-background-clip: text; background-clip: text; }
+    body[data-ecran-theme="bleu"] .tv-next-number { color: #FFFFFF; }
+    body[data-ecran-theme="bleu"] .tv-label, body[data-ecran-theme="bleu"] .tv-date, body[data-ecran-theme="bleu"] .tv-footer { color: #DCE7FC; }
+
+    /* ---- Thème 3 : Elegant Minimal ---- */
+    body[data-ecran-theme="minimal"] { background: #F8FAFC; color: #0F172A; }
+    body[data-ecran-theme="minimal"] .tv-panel { background: #FFFFFF; border: 1px solid #E5EAF1; box-shadow: 0 10px 40px rgba(15,23,42,0.06); }
+    body[data-ecran-theme="minimal"] .tv-next, body[data-ecran-theme="minimal"] .tv-tips { background: #FFFFFF; border: 1px solid #E5EAF1; }
+    body[data-ecran-theme="minimal"] .tv-number { background: none; -webkit-text-fill-color: initial; color: #1D4ED8; }
+    body[data-ecran-theme="minimal"] .tv-next-number { color: #10B981; }
+    body[data-ecran-theme="minimal"] .tv-label { color: #94A3B8; }
+    body[data-ecran-theme="minimal"] .tv-date { color: #64748B; }
+    body[data-ecran-theme="minimal"] .tv-tip-text { color: #334155; }
+    body[data-ecran-theme="minimal"] .tv-footer { color: #94A3B8; }
+    body[data-ecran-theme="minimal"] .tv-qr-corner { border: 1px solid #E5EAF1; }
+</style>
+</head>
+<body data-ecran-theme="{{ clinic.ecran_theme or 'sombre' if clinic else 'sombre' }}">
+<div class="tv-wrap">
+    <div class="tv-header">
+        <div>
+            <div class="tv-clinic">
+                <img src="{{ url_for('documents.serve_upload', filename=clinic.logo_path.split('/')[-1]) if clinic and clinic.logo_path else url_for('static', filename='brand/logo.png') }}" alt="Logo" style="height:38px;width:auto;border-radius:8px;">
+                {{ clinic.nom_clinique if clinic else 'RA9MANA Clinic' }}
+            </div>
+            {% if clinic %}
+            <div class="tv-clinic-info">{{ [clinic.nom_medecin, clinic.specialite, clinic.telephone, clinic.adresse] | select | join(' • ') }}</div>
+            {% endif %}
+        </div>
+        <div class="tv-clock">
+            <div class="tv-time" id="tv-heure">--:--</div>
+            <div class="tv-date" id="tv-date"></div>
+            <div class="tv-meteo" id="tv-meteo"></div>
+        </div>
+    </div>
+
+    <div class="tv-main">
+        <div class="tv-panel">
+            <div class="tv-label">Numéro en consultation</div>
+            <div class="tv-number" id="numero-actuel">—</div>
+            <div class="tv-room" id="salle-actuelle">Salle —</div>
+        </div>
+        <div class="tv-side">
+            <div class="tv-next">
+                <div class="tv-label">Prochain numéro</div>
+                <div class="tv-next-number" id="numero-suivant">—</div>
+            </div>
+            <div class="tv-tips">
+                <div class="tv-label">💡 Conseil santé</div>
+                <div class="tv-tip-text" id="conseil-sante">{{ conseils[0] if conseils else '' }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tv-footer">Merci de patienter, votre tour ne saurait tarder — {{ clinic.nom_clinique if clinic else 'RA9MANA Clinic' }}</div>
+</div>
+
+{% if clinic %}
+<div class="tv-qr-corner">
+    <div id="tv-carte-qr"></div>
+    <div>Carte du médecin</div>
+</div>
+{% endif %}
+
+<script>
+const conseils = {{ conseils|tojson }};
+let conseilIndex = 0;
+const clinicId = {{ clinic.id if clinic else 'null' }};
+
+function updateClock() {
+    const now = new Date();
+    document.getElementById('tv-heure').textContent = now.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+    document.getElementById('tv-date').textContent = now.toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function rotateTip() {
+    conseilIndex = (conseilIndex + 1) % conseils.length;
+    document.getElementById('conseil-sante').textContent = conseils[conseilIndex];
+}
+setInterval(rotateTip, 12000);
+
+function refreshData() {
+    if (!clinicId) return;
+    fetch(`/salle-attente/ecran/donnees?clinic_id=${clinicId}`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.ok) return;
+            document.getElementById('numero-actuel').textContent = data.numero_actuel ?? '—';
+            document.getElementById('salle-actuelle').textContent = data.salle ? `Salle ${data.salle}` : 'Salle —';
+            document.getElementById('numero-suivant').textContent = data.numero_suivant ?? '—';
+        }).catch(() => {});
+}
+setInterval(refreshData, 4000);
+refreshData();
+
+// Météo (best-effort, nécessite une connexion internet côté navigateur)
+{% if clinic and clinic.adresse %}
+fetch("https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent("{{ clinic.adresse.split(',')[-1].strip() }}") + "&count=1&language=fr")
+    .then(r => r.json())
+    .then(geo => {
+        if (!geo.results || !geo.results.length) return;
+        const { latitude, longitude } = geo.results[0];
+        return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max&timezone=auto`)
+            .then(r => r.json())
+            .then(data => {
+                const cur = data.current ? Math.round(data.current.temperature_2m) : null;
+                const max = data.daily ? Math.round(data.daily.temperature_2m_max[0]) : null;
+                if (cur !== null) {
+                    document.getElementById('tv-meteo').textContent = `☀️ ${cur}°C actuellement — Max ${max}°C`;
+                }
+            });
+    }).catch(() => {});
+{% endif %}
+
+{% if clinic %}
+const carteScript = document.createElement('script');
+carteScript.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+carteScript.onload = function() {
+    try {
+        new QRCode(document.getElementById('tv-carte-qr'), {
+            text: "{{ url_for('site.digital_card', clinic_id=clinic.id, _external=True) }}",
+            width: 64, height: 64
+        });
+    } catch (e) {}
+};
+document.head.appendChild(carteScript);
+{% endif %}
+</script>
+</body>
+</html>

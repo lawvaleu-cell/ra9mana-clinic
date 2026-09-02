@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Nouveau modèle d'ordonnance{% endblock %}
+{% block content %}
+<div class="page-header"><div class="page-title">Nouveau modèle d'ordonnance</div></div>
+
+<form method="POST" class="card" style="max-width:900px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-group">
+        <label class="form-label">Nom du modèle <span class="required">*</span></label>
+        <input class="form-control" name="nom" placeholder="Ex : Suivi diabète, Hypertension, Rhume commun" required>
+    </div>
+
+    <div id="lignes-container"></div>
+    <button type="button" class="btn btn-secondary btn-sm" onclick="addLine()" style="margin-bottom:18px;">+ Ajouter un médicament</button>
+
+    <div class="form-group">
+        <label class="form-label">Notes par défaut</label>
+        <textarea class="form-control" name="notes" rows="2"></textarea>
+    </div>
+
+    <div class="flex gap-2">
+        <button type="submit" class="btn btn-primary">Créer le modèle</button>
+        <a href="{{ url_for('prescriptions.list_templates') }}" class="btn btn-secondary">Annuler</a>
+    </div>
+</form>
+
+<template id="ligne-template">
+    <div class="ligne-medicament card" style="background:var(--bg-surface-alt);margin-bottom:12px;padding:16px;">
+        <div class="flex justify-between items-center" style="margin-bottom:10px;">
+            <strong style="font-size:12.5px;color:var(--text-secondary);">Médicament</strong>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="this.closest('.ligne-medicament').remove()">✕ Retirer</button>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Nom du médicament</label><input class="form-control" name="medicament[]" required></div>
+            <div class="form-group"><label class="form-label">Dosage</label><input class="form-control" name="dosage[]" placeholder="500 mg"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Fréquence</label><input class="form-control" name="frequence[]" placeholder="3 fois par jour"></div>
+            <div class="form-group"><label class="form-label">Durée</label><input class="form-control" name="duree[]" placeholder="7 jours"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Instructions</label><input class="form-control" name="instructions[]" placeholder="À prendre après les repas"></div>
+    </div>
+</template>
+
+<script>
+function addLine() {
+    const tpl = document.getElementById('ligne-template');
+    document.getElementById('lignes-container').appendChild(tpl.content.cloneNode(true));
+}
+addLine();
+</script>
+{% endblock %}

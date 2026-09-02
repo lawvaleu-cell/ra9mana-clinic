@@ -1,0 +1,107 @@
+/* =========================================================
+   CliniQ — Documents imprimables (ordonnances, labo, radio,
+   documents personnalisés). 3 styles de gabarit x 2 formats papier.
+   ========================================================= */
+
+.doc-page-wrap {
+    background: #E9EDF3;
+    min-height: 100vh;
+    padding: 30px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.doc-toolbar {
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.doc-sheet {
+    background: #fff;
+    color: #0F172A;
+    box-shadow: 0 8px 30px rgba(15,23,42,0.12);
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+}
+.doc-sheet.paper-a4 { max-width: 210mm; min-height: 297mm; padding: 16mm 18mm; }
+.doc-sheet.paper-a5 { max-width: 148mm; min-height: 210mm; padding: 10mm 12mm; font-size: 92%; }
+
+/* ---- En-tête : 3 styles ---- */
+.doc-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+
+.doc-header.style-classique {
+    background: #1D4ED8; color: #fff; margin: -16mm -18mm 22px -18mm; padding: 12mm 18mm;
+}
+.paper-a5 .doc-header.style-classique { margin: -10mm -12mm 16px -12mm; padding: 8mm 12mm; }
+
+.doc-header.style-moderne {
+    border-bottom: 2px solid #0F172A; padding-bottom: 14px; color: #0F172A;
+}
+
+.doc-header.style-audacieux {
+    background: linear-gradient(135deg, #1D4ED8, #10B981); color: #fff;
+    margin: -16mm -18mm 22px -18mm; padding: 14mm 18mm; border-radius: 0 0 18px 18px;
+}
+.paper-a5 .doc-header.style-audacieux { margin: -10mm -12mm 16px -12mm; padding: 10mm 12mm; }
+
+.doc-header.style-serein {
+    background: #F4F6F5; color: #3F4A47; border-bottom: 1.5px solid #8FA79C;
+    margin: -16mm -18mm 22px -18mm; padding: 12mm 18mm;
+}
+.paper-a5 .doc-header.style-serein { margin: -10mm -12mm 16px -12mm; padding: 8mm 12mm; }
+.doc-header.style-serein .doc-clinic-name { color: #2F3B38; font-weight: 700; }
+.doc-header.style-serein .doc-title { color: #5F7470; }
+
+.doc-header.style-vague {
+    background: linear-gradient(120deg, #0E7C86, #14B8A6 75%, #0E7C86);
+    color: #fff; margin: -16mm -18mm 22px -18mm; padding: 12mm 18mm;
+    border-radius: 0 0 60% 8px / 0 0 18px 8px;
+}
+.paper-a5 .doc-header.style-vague { margin: -10mm -12mm 16px -12mm; padding: 8mm 12mm; }
+
+.doc-header img.doc-logo { width: 46px; height: 46px; object-fit: contain; border-radius: 8px; background: rgba(255,255,255,0.15); padding: 4px; }
+.doc-header.style-moderne img.doc-logo { background: none; padding: 0; }
+.doc-clinic-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 19px; }
+.doc-header.style-audacieux .doc-clinic-name { font-size: 22px; }
+.doc-clinic-sub { font-size: 11.5px; opacity: .85; margin-top: 2px; }
+.doc-title { margin-left: auto; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; text-align: right; }
+.doc-header.style-moderne .doc-title { color: #1D4ED8; }
+
+/* ---- Bloc patient ---- */
+.doc-patient-block { display: flex; justify-content: space-between; border-bottom: 1px solid #E5EAF1; padding-bottom: 10px; margin-bottom: 18px; font-size: 12.5px; }
+.doc-patient-name { font-weight: 700; font-size: 14px; }
+.doc-meta { color: #64748B; }
+
+/* ---- Corps ---- */
+.doc-body { font-size: 13.5px; line-height: 1.7; min-height: 120mm; }
+.doc-body h1, .doc-body h2, .doc-body h3 { font-family: 'Plus Jakarta Sans', sans-serif; }
+.doc-line-item { padding: 10px 0; border-bottom: 1px dashed #E5EAF1; }
+.doc-line-item .med-name { font-weight: 700; font-size: 14px; }
+.doc-line-item .med-detail { color: #64748B; font-size: 12.5px; margin-top: 2px; }
+.doc-line-item .med-instructions { font-style: italic; font-size: 12px; margin-top: 2px; }
+
+/* ---- Pied de page / signature ---- */
+.doc-footer { margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+.doc-codes-block { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.doc-codes-block canvas, .doc-codes-block svg { display: block; }
+.doc-codes-ref { font-size: 9px; color: #94A3B8; letter-spacing: .04em; }
+.doc-signature-box { text-align: center; }
+.doc-signature-box img { max-width: 130px; max-height: 55px; object-fit: contain; }
+.doc-signature-line { font-size: 10.5px; color: #94A3B8; margin-top: 4px; }
+.doc-contact-footer { font-size: 10px; color: #94A3B8; border-top: 1px solid #E5EAF1; padding-top: 8px; margin-top: 30px; text-align: center; }
+
+/* ---- Impression ---- */
+@media print {
+    body { background: #fff !important; }
+    .doc-page-wrap { background: #fff; padding: 0; }
+    .doc-toolbar, .no-print { display: none !important; }
+    .doc-sheet { box-shadow: none; margin: 0; }
+    .doc-sheet.paper-a4 { width: 210mm; min-height: 297mm; }
+    .doc-sheet.paper-a5 { width: 148mm; min-height: 210mm; }
+    @page { margin: 0; }
+}

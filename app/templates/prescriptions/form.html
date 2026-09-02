@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Nouvelle ordonnance{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Nouvelle ordonnance</div>
+        <div class="page-subtitle">Patient : {{ patient.prenom }} {{ patient.nom }}</div>
+    </div>
+</div>
+
+<form method="POST" class="card" style="max-width:900px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {% if modeles %}
+    <div class="form-group">
+        <label class="form-label">Appliquer un modèle</label>
+        <select class="form-control" id="select-modele" onchange="appliquerModele(this.value)">
+            <option value="">— Choisir un modèle —</option>
+            {% for m in modeles %}<option value="{{ m.id }}">{{ m.nom }}</option>{% endfor %}
+        </select>
+    </div>
+    {% endif %}
+
+    {% if favoris %}
+    <div class="form-group">
+        <label class="form-label">Médicaments favoris (clic pour ajouter)</label>
+        <div class="flex gap-2" style="flex-wrap:wrap;">
+            {% for f in favoris %}
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addFavoriteLine('{{ f.nom }}', '{{ f.dosage_defaut or '' }}', '{{ f.frequence_defaut or '' }}')">+ {{ f.nom }}</button>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div id="lignes-container"></div>
+    <button type="button" class="btn btn-secondary btn-sm" onclick="addLine()" style="margin-bottom:18px;">+ Ajouter un médicament</button>
+
+    <div class="form-group">
+        <label class="form-label">Notes complémentaires</label>
+        <textarea class="form-control" name="notes" rows="2"></textarea>
+    </div>
+
+    <div class="flex gap-2">
+        <button type="submit" class="btn btn-primary">Créer l'ordonnance</button>
+        <a href="{{ url_for('patients.view_patient', patient_id=patient.id) }}" class="btn btn-secondary">Annuler</a>
+    </div>
+</form>
+
+<datalist id="liste-medicaments">
+    {% for nom in medicaments_connus %}<option value="{{ nom }}">{% endfor %}
+</datalist>
+
+<template id="ligne-template">
+    <div class="ligne-medicament card" style="background:var(--bg-surface-alt);margin-bottom:12px;padding:16px;">
+        <div class="flex justify-between items-center" style="margin-bottom:10px;">
+            <strong style="font-size:12.5px;color:var(--text-secondary);">Médicament</strong>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="this.closest('.ligne-medicament').remove()">✕ Retirer</button>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Nom du médicament</label>
+            <input class="form-control" name="medicament[]" list="liste-medicaments" placeholder="Saisir ou choisir dans la liste" required>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Dosage</label>
+                <div class="flex gap-2">
+                    <input class="form-control dosage-valeur" type="text" placeholder="500" style="max-width:50%;">
+                    <select class="form-control dosage-unite">
+                        <option value="">Unité</option>
+                        {% for u in unites_dosage %}<option value="{{ u }}">{{ u }}</option>{% endfor %}
+                    </select>
+                </div>
+                <input type="hidden" class="form-control" name="dosage[]">
+            </div>
+            <div class="form-group"><label class="form-label">Fréquence</label><input class="form-control" name="frequence[]" placeholder="3 fois par jour"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Durée</label><input class="form-control" name="duree[]" placeholder="7 jours"></div>
+            <div class="form-group"><label class="form-label">Instructions</label><input class="form-control" name="instructions[]" placeholder="À prendre après les repas"></div>
+        </div>
+    </div>
+</template>
+
+<script>
+function wireDosageInputs(scope) {
+    const val = scope.querySelector('.dosage-valeur');
+    const unit = scope.querySelector('.dosage-unite');
+    const hidden = scope.querySelector('[name="dosage[]"]');
+    function sync() {
+        hidden.value = [val.value.trim(), unit.value].filter(Boolean).join(' ');
+    }
+    val.addEventListener('input', sync);
+    unit.addEventListener('change', sync);
+}
+function setDosage(scope, dosageStr) {
+    const parts = (dosageStr || '').trim().split(/\s+/);
+    scope.querySelector('.dosage-valeur').value = parts[0] || '';
+    scope.querySelector('.dosage-unite').value = parts.slice(1).join(' ') || '';
+    scope.querySelector('[name="dosage[]"]').value = dosageStr || '';
+}
+function addLine() {
+    const tpl = document.getElementById('ligne-template');
+    const clone = tpl.content.cloneNode(true);
+    document.getElementById('lignes-container').appendChild(clone);
+    const lignes = document.querySelectorAll('.ligne-medicament');
+    wireDosageInputs(lignes[lignes.length - 1]);
+}
+function addFavoriteLine(nom, dosage, frequence) {
+    addLine();
+    const lignes = document.querySelectorAll('.ligne-medicament');
+    const last = lignes[lignes.length - 1];
+    last.querySelector('[name="medicament[]"]').value = nom;
+    setDosage(last, dosage);
+    last.querySelector('[name="frequence[]"]').value = frequence;
+}
+function appliquerModele(modeleId) {
+    if (!modeleId) return;
+    fetch(`/prescriptions/modeles/${modeleId}/json`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.ok) return;
+            document.getElementById('lignes-container').innerHTML = '';
+            data.lignes.forEach(l => {
+                addLine();
+                const lignes = document.querySelectorAll('.ligne-medicament');
+                const last = lignes[lignes.length - 1];
+                last.querySelector('[name="medicament[]"]').value = l.medicament || '';
+                setDosage(last, l.dosage || '');
+                last.querySelector('[name="frequence[]"]').value = l.frequence || '';
+                last.querySelector('[name="duree[]"]').value = l.duree || '';
+                last.querySelector('[name="instructions[]"]').value = l.instructions || '';
+            });
+            if (data.notes) document.querySelector('[name="notes"]').value = data.notes;
+        });
+}
+addLine();
+</script>
+{% endblock %}

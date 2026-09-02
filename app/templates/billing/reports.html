@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Rapports financiers{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Rapports financiers</div>
+        <div class="page-subtitle">Analyse des revenus et dépenses</div>
+    </div>
+    <div class="tabs" style="border:none;margin:0;">
+        <a class="tab-link {{ 'active' if periode == 'mois' }}" href="{{ url_for('billing.reports', periode='mois') }}">Ce mois</a>
+        <a class="tab-link {{ 'active' if periode == 'annee' }}" href="{{ url_for('billing.reports', periode='annee') }}">Cette année</a>
+    </div>
+</div>
+
+<div class="grid grid-4" style="margin-bottom:20px;">
+    <div class="stat-card"><div class="stat-label">Revenus</div><div class="stat-value" style="font-size:21px;">{{ revenus|money }}</div></div>
+    <div class="stat-card"><div class="stat-label">Dépenses</div><div class="stat-value" style="font-size:21px;">{{ depenses|money }}</div></div>
+    <div class="stat-card"><div class="stat-label">Bénéfice net</div><div class="stat-value" style="font-size:21px;color:{{ 'var(--accent)' if profit >= 0 else 'var(--danger)' }};">{{ profit|money }}</div></div>
+    <div class="stat-card"><div class="stat-label">Factures émises</div><div class="stat-value" style="font-size:21px;">{{ nb_factures }}</div></div>
+</div>
+
+<div class="grid grid-2" style="align-items:start;">
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Répartition des dépenses</div>
+        {% if par_categorie %}
+        {% for c in par_categorie %}
+        <div class="flex justify-between" style="padding:8px 0;border-bottom:1px solid var(--border);">
+            <span class="badge badge-neutral">{{ c.categorie }}</span>
+            <strong>{{ c.s|money }}</strong>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p class="text-muted">Aucune dépense sur cette période.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">Impayés</div>
+        <div class="stat-value" style="font-size:26px;color:var(--danger);">{{ impayes_total|money }}</div>
+        <p class="text-muted" style="margin-top:6px;">Montant total en attente de règlement (toutes périodes).</p>
+        <a href="{{ url_for('billing.list_invoices', statut='impaye') }}" class="btn btn-secondary btn-sm" style="margin-top:10px;">Voir les factures impayées</a>
+    </div>
+</div>
+{% endblock %}

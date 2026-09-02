@@ -1,0 +1,86 @@
+{% extends "super_admin/base.html" %}
+{% block title %}{{ clinic.nom_clinique }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">{{ clinic.nom_clinique }}</div>
+        <div class="page-subtitle">{{ clinic.nom_medecin }} • {{ nb_patients }} patients</div>
+    </div>
+</div>
+
+<div class="grid" style="grid-template-columns: 1fr 1fr; align-items:start; gap:20px;">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+        <div class="card">
+            <div class="card-title" style="margin-bottom:14px;">Informations</div>
+            <form method="POST" action="{{ url_for('super_admin.edit_clinic', clinic_id=clinic.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group"><label class="form-label">Nom de la clinique</label><input class="form-control" name="nom_clinique" value="{{ clinic.nom_clinique }}"></div>
+                <div class="form-group"><label class="form-label">Médecin</label><input class="form-control" name="nom_medecin" value="{{ clinic.nom_medecin }}"></div>
+                <div class="form-group"><label class="form-label">E-mail</label><input class="form-control" name="email" value="{{ clinic.email or '' }}"></div>
+                <div class="form-group"><label class="form-label">Téléphone</label><input class="form-control" name="telephone" value="{{ clinic.telephone or '' }}"></div>
+                <button type="submit" class="btn btn-secondary">Enregistrer</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-title" style="margin-bottom:14px;">Statut du compte</div>
+            <form method="POST" action="{{ url_for('super_admin.update_clinic_status', clinic_id=clinic.id) }}" class="flex gap-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select class="form-control" name="statut">
+                    {% for s in ['essai','actif','suspendu','expire'] %}<option value="{{ s }}" {{ 'selected' if clinic.statut == s }}>{{ s }}</option>{% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary">Mettre à jour</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-title" style="margin-bottom:14px;">Réinitialiser un mot de passe</div>
+            <form method="POST" action="{{ url_for('super_admin.reset_clinic_password', clinic_id=clinic.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group">
+                    <label class="form-label">Utilisateur</label>
+                    <select class="form-control" name="user_id">
+                        {% for u in utilisateurs %}<option value="{{ u.id }}">{{ u.nom_complet }} ({{ u.email }})</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group"><label class="form-label">Nouveau mot de passe</label><input class="form-control" type="password" name="nouveau_mdp"></div>
+                <button type="submit" class="btn btn-secondary">Réinitialiser</button>
+            </form>
+        </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:18px;">
+        <div class="card">
+            <div class="card-title" style="margin-bottom:14px;">Abonnement</div>
+            <form method="POST" action="{{ url_for('super_admin.update_subscription', clinic_id=clinic.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group">
+                    <label class="form-label">Plan</label>
+                    <select class="form-control" name="plan">
+                        {% for p in ['essai_gratuit','mensuel','annuel'] %}<option value="{{ p }}" {{ 'selected' if clinic.plan == p }}>{{ p }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group"><label class="form-label">Date d'expiration</label><input class="form-control" type="date" name="date_expiration" value="{{ clinic.date_expiration_abonnement or '' }}"></div>
+                <button type="submit" class="btn btn-primary">Mettre à jour l'abonnement</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-title" style="margin-bottom:14px;">Utilisateurs de la clinique</div>
+            {% for u in utilisateurs %}
+            <div class="flex justify-between" style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
+                <span>{{ u.nom_complet }} ({{ u.role }})</span><span class="text-muted">{{ u.email }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="card" style="border-color:var(--danger);">
+            <div class="card-title" style="margin-bottom:10px;color:var(--danger);">Zone dangereuse</div>
+            <form method="POST" action="{{ url_for('super_admin.delete_clinic', clinic_id=clinic.id) }}" onsubmit="return confirm('Supprimer définitivement cette clinique et toutes ses données ?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger btn-block">Supprimer la clinique définitivement</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

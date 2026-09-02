@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Journal d'audit{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Journal d'audit</div>
+        <div class="page-subtitle">{{ total }} action(s) enregistrée(s)</div>
+    </div>
+</div>
+<div class="card">
+    {% if logs %}
+    <div class="table-wrap">
+    <table class="data-table">
+        <thead><tr><th>Utilisateur</th><th>Action</th><th>Détails</th><th>Adresse IP</th><th>Date</th></tr></thead>
+        <tbody>
+        {% for l in logs %}
+            <tr>
+                <td>{{ l.nom_complet or 'Système' }}</td>
+                <td><span class="badge badge-neutral">{{ l.action }}</span></td>
+                <td class="text-muted">{{ l.details or '—' }}</td>
+                <td class="text-muted">{{ l.adresse_ip or '—' }}</td>
+                <td class="text-muted">{{ l.date_creation|datetime_fr }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% for i in range(1, total_pages + 1) %}<a href="{{ url_for('audit.list_logs', page=i) }}" class="{{ 'current' if i == page }}">{{ i }}</a>{% endfor %}
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="empty-state"><p>Aucune action enregistrée.</p></div>
+    {% endif %}
+</div>
+{% endblock %}

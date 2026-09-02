@@ -1,0 +1,58 @@
+{% macro doc_header(clinic, titre, style) %}
+<div class="doc-header style-{{ style }}">
+    {% if clinic.logo_path %}<img class="doc-logo" src="{{ url_for('documents.serve_upload', filename=clinic.logo_path.split('/')[-1]) }}" alt="Logo">{% endif %}
+    <div>
+        <div class="doc-clinic-name">{{ clinic.nom_clinique or 'Cabinet Médical' }}{% if clinic.nom_clinique_ar %} <span dir="rtl" style="font-weight:600;">— {{ clinic.nom_clinique_ar }}</span>{% endif %}</div>
+        <div class="doc-clinic-sub">{{ [clinic.nom_medecin, clinic.specialite, clinic.telephone] | select | join(' • ') }}</div>
+        {% if clinic.specialite_ar or clinic.nom_medecin_ar %}
+        <div class="doc-clinic-sub" dir="rtl">{{ [clinic.nom_medecin_ar, clinic.specialite_ar] | select | join(' • ') }}</div>
+        {% endif %}
+    </div>
+    <div class="doc-title">{{ titre }}</div>
+</div>
+{% endmacro %}
+
+{% macro doc_patient(patient, age) %}
+<div class="doc-patient-block">
+    <div>
+        <div class="doc-patient-name">{{ patient.prenom }} {{ patient.nom }}</div>
+        <div class="doc-meta">N° {{ patient.numero_patient or '' }} {% if age is not none %}• {{ age }} ans{% endif %}</div>
+    </div>
+    <div class="doc-meta">{{ date_str }}</div>
+</div>
+{% endmacro %}
+
+{% macro doc_footer(clinic, doc_ref="") %}
+<div class="doc-footer">
+    <div class="doc-codes-block">
+        {% if doc_ref %}
+        <div id="qr-code-target" class="doc-qr-target"></div>
+        <div class="doc-codes-ref">{{ doc_ref }}</div>
+        {% else %}
+        <div class="doc-meta" style="font-size:11px;">{{ clinic.adresse or '' }}</div>
+        {% endif %}
+    </div>
+    <div class="doc-signature-box">
+        {% if clinic.signature_path %}<img src="{{ url_for('documents.serve_upload', filename=clinic.signature_path.split('/')[-1]) }}" alt="Signature">{% endif %}
+        {% if clinic.cachet_path %}<img src="{{ url_for('documents.serve_upload', filename=clinic.cachet_path.split('/')[-1]) }}" alt="Cachet" style="margin-left:10px;">{% endif %}
+        <div class="doc-signature-line">Signature et cachet</div>
+    </div>
+</div>
+<div class="doc-contact-footer">
+    {{ [clinic.telephone, clinic.email, clinic.adresse] | select | join(' • ') }}
+    {% if clinic.numero_fiscal %} — N° Fiscal : {{ clinic.numero_fiscal }}{% endif %}
+    {% if clinic.pied_de_page_ar %}<div dir="rtl" style="margin-top:3px;">{{ clinic.pied_de_page_ar }}</div>{% endif %}
+</div>
+{% if doc_ref %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        new QRCode(document.getElementById("qr-code-target"), {
+            text: {{ doc_ref|tojson }}, width: 64, height: 64, colorDark: "#0F172A", colorLight: "#ffffff"
+        });
+    } catch (e) {}
+});
+</script>
+{% endif %}
+{% endmacro %}
